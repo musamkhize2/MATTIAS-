@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `command_history` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `userId` int, `command` text NOT NULL, `response` text, `agentsInvolved` json, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `command_history_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4YbT2nYLvPJcVju.root --database G6U5HstY4cAJdnY8RzxjGZ --execute CREATE TABLE `command_history` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `userId` int, `command` text NOT NULL, `response` text, `agentsInvolved` json, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `command_history_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 107
+}

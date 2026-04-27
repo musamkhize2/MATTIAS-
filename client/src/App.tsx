@@ -4,34 +4,50 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import MATTIASLayout from "./components/MATTIASLayout";
+import CommandCenter from "./pages/CommandCenter";
+import EventLog from "./pages/EventLog";
+import ApprovalQueue from "./pages/ApprovalQueue";
+import AgentPage from "./pages/AgentPage";
+import AutonomySettings from "./pages/AutonomySettings";
+import MemoryExplorer from "./pages/MemoryExplorer";
+import PolicyManager from "./pages/PolicyManager";
+import Dashboard from "./pages/Dashboard";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <MATTIASLayout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/command" component={CommandCenter} />
+        <Route path="/events" component={EventLog} />
+        <Route path="/approvals" component={ApprovalQueue} />
+        <Route path="/agents/:agentSlug" component={AgentPage} />
+        <Route path="/autonomy" component={AutonomySettings} />
+        <Route path="/memory" component={MemoryExplorer} />
+        <Route path="/policies" component={PolicyManager} />
+        <Route path="/404" component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </MATTIASLayout>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
+          <Toaster
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "oklch(0.13 0.015 260)",
+                border: "1px solid oklch(0.22 0.02 260)",
+                color: "oklch(0.95 0.01 260)",
+              },
+            }}
+          />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

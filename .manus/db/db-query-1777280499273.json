@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `events` (`id` bigint AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `eventType` varchar(128) NOT NULL, `aggregateId` varchar(128) NOT NULL, `aggregateType` varchar(64) NOT NULL, `occurrenceTime` timestamp NOT NULL DEFAULT (now()), `data` json NOT NULL, `causationId` bigint, `correlationId` varchar(128), `source` varchar(64), `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `events_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4YbT2nYLvPJcVju.root --database G6U5HstY4cAJdnY8RzxjGZ --execute CREATE TABLE `events` (`id` bigint AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `eventType` varchar(128) NOT NULL, `aggregateId` varchar(128) NOT NULL, `aggregateType` varchar(64) NOT NULL, `occurrenceTime` timestamp NOT NULL DEFAULT (now()), `data` json NOT NULL, `causationId` bigint, `correlationId` varchar(128), `source` varchar(64), `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `events_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 113
+}

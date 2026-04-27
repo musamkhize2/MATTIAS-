@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `entities` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `type` varchar(64) NOT NULL, `name` varchar(255) NOT NULL, `currentState` json NOT NULL, `version` int DEFAULT 0, `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `entities_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4YbT2nYLvPJcVju.root --database G6U5HstY4cAJdnY8RzxjGZ --execute CREATE TABLE `entities` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `type` varchar(64) NOT NULL, `name` varchar(255) NOT NULL, `currentState` json NOT NULL, `version` int DEFAULT 0, `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT `entities_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 219
+}

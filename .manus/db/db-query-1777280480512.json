@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `approvals` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `eventType` varchar(128) NOT NULL, `eventData` json NOT NULL, `agentName` varchar(128), `agentReasoning` text, `actionType` varchar(128) NOT NULL, `actionPayload` json, `requestedBy` int, `riskScore` float, `status` enum('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING', `correlationId` varchar(128), `createdAt` timestamp NOT NULL DEFAULT (now()), `resolvedAt` timestamp, CONSTRAINT `approvals_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4YbT2nYLvPJcVju.root --database G6U5HstY4cAJdnY8RzxjGZ --execute CREATE TABLE `approvals` (`id` int AUTO_INCREMENT NOT NULL, `tenantId` int NOT NULL, `eventType` varchar(128) NOT NULL, `eventData` json NOT NULL, `agentName` varchar(128), `agentReasoning` text, `actionType` varchar(128) NOT NULL, `actionPayload` json, `requestedBy` int, `riskScore` float, `status` enum('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING', `correlationId` varchar(128), `createdAt` timestamp NOT NULL DEFAULT (now()), `resolvedAt` timestamp, CONSTRAINT `approvals_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 116
+}
