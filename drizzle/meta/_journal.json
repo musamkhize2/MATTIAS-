@@ -15,6 +15,13 @@
       "when": 1777280443635,
       "tag": "0001_spooky_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777286793780,
+      "tag": "0002_optimal_vanisher",
+      "breakpoints": true
     }
   ]
 }

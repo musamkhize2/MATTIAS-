@@ -182,3 +182,40 @@ export const commandHistory = mysqlTable("command_history", {
 
 export type CommandHistoryEntry = typeof commandHistory.$inferSelect;
 export type InsertCommandHistory = typeof commandHistory.$inferInsert;
+
+// ─── Data Sources ─────────────────────────────────────────────────────────────
+export const dataSources = mysqlTable("data_sources", {
+  id: int("id").autoincrement().primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 64 }).notNull(), // 'webhook', 'crm', 'api'
+  config: json("config").$type<Record<string, unknown>>().notNull(),
+  webhookSecret: varchar("webhookSecret", { length: 255 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DataSource = typeof dataSources.$inferSelect;
+export type InsertDataSource = typeof dataSources.$inferInsert;
+
+// ─── CRM Connectors ───────────────────────────────────────────────────────────
+export const crmConnectors = mysqlTable("crm_connectors", {
+  id: int("id").autoincrement().primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  crmType: varchar("crmType", { length: 64 }).notNull(), // 'hubspot', 'salesforce', 'pipedrive'
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  oauthToken: text("oauthToken"),
+  refreshToken: text("refreshToken"),
+  tokenExpiresAt: timestamp("tokenExpiresAt"),
+  config: json("config").$type<Record<string, unknown>>(),
+  eventMappings: json("eventMappings").$type<Record<string, string>>(),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CRMConnector = typeof crmConnectors.$inferSelect;
+export type InsertCRMConnector = typeof crmConnectors.$inferInsert;

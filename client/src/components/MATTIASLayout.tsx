@@ -20,7 +20,9 @@ import {
   ShoppingCart,
   Terminal,
   TrendingUp,
+  Webhook,
   Zap,
+  GitBranch,
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -238,6 +240,15 @@ export default function MATTIASLayout({ children }: { children: ReactNode }) {
             <NavItem href="/autonomy" icon={Settings} label="Autonomy Controls" active={location === "/autonomy"} />
             <NavItem href="/memory" icon={Brain} label="Memory Explorer" active={location === "/memory"} />
             <NavItem href="/policies" icon={ClipboardList} label="Policy Manager" active={location === "/policies"} />
+          </div>
+
+          <div className="pt-2">
+            <p className="text-xs font-semibold px-3 mb-1" style={{ color: "oklch(0.4 0.02 260)" }}>
+              INTEGRATIONS
+            </p>
+            <NavItem href="/data-sources" icon={Webhook} label="Data Sources" active={location === "/data-sources"} />
+            <NavItem href="/crm-marketplace" icon={Zap} label="CRM Marketplace" active={location === "/crm-marketplace"} />
+            <NavItem href="/workflows" icon={GitBranch} label="Workflow Builder" active={location === "/workflows"} />
           </div>
         </nav>
 

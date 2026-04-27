@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -20,12 +19,14 @@ import {
   upsertAgentConfig,
   createPolicy,
 } from "./db";
+import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import {
   orchestrateEvent,
   runMATTIASCommand,
   searchMemory,
 } from "./mattias/orchestrator";
 import { AGENT_NAMES, EventTypes } from "./mattias/eventCatalog";
+import { z } from "zod";
 
 // ─── Tenant Helper ────────────────────────────────────────────────────────────
 
@@ -239,6 +240,10 @@ export const appRouter = router({
   }),
 
   // ─── Policies ──────────────────────────────────────────────────────────────
+  dataSources: dataSourcesRouter,
+  crmConnectors: crmConnectorsRouter,
+  webhooks: webhooksRouter,
+
   policies: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const tenantId = await getTenantId(ctx.user.id);

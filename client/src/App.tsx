@@ -13,6 +13,9 @@ import AutonomySettings from "./pages/AutonomySettings";
 import MemoryExplorer from "./pages/MemoryExplorer";
 import PolicyManager from "./pages/PolicyManager";
 import Dashboard from "./pages/Dashboard";
+import CRMMarketplace from "./pages/CRMMarketplace";
+import DataSources from "./pages/DataSources";
+import WorkflowBuilder from "./pages/WorkflowBuilder";
 
 function Router() {
   return (
@@ -26,6 +29,9 @@ function Router() {
         <Route path="/autonomy" component={AutonomySettings} />
         <Route path="/memory" component={MemoryExplorer} />
         <Route path="/policies" component={PolicyManager} />
+        <Route path="/crm-marketplace" component={CRMMarketplace} />
+        <Route path="/data-sources" component={DataSources} />
+        <Route path="/workflows" component={WorkflowBuilder} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

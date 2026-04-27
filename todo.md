@@ -39,3 +39,43 @@
 - [x] Event badge/chip components
 - [x] Risk score indicator component
 - [x] Login page for unauthenticated users
+
+
+## Webhook & Data Sources (NEW)
+
+- [x] Data sources table schema (webhooks, API connectors, CRM integrations)
+- [x] Webhook ingestion endpoints (/api/webhooks/{sourceId})
+- [x] Data source management tRPC router (list, create, delete, toggle)
+- [x] Data source UI page (create, test, delete sources)
+- [x] Webhook secret generation and URL management
+- [x] Event type mapping from webhook payloads
+
+## CRM Integration (NEW)
+
+- [x] CRM connectors table (HubSpot, Salesforce, Pipedrive)
+- [x] CRM connector marketplace UI page with 3 connectors
+- [x] CRM connector management (list, create, delete, toggle)
+- [x] OAuth token storage and refresh token support
+- [x] CRM event mapping (lead, deal, contact events → MATTIAS events)
+- [x] Default event mappings for HubSpot, Salesforce, Pipedrive
+- [x] CRM event processing pipeline
+
+## Advanced Policy Builder (NEW)
+
+- [x] Enhanced policy UI with condition builder
+- [x] Event type selector with schema preview
+- [x] Action effect selector (ALLOW, DENY, REQUIRE_APPROVAL)
+- [x] Risk threshold slider with examples
+- [x] Policy testing/preview mode
+
+## Workflow Builder (NEW)
+
+- [x] Workflow definitions table schema
+- [x] Drag-and-drop workflow canvas UI
+- [x] Node types: trigger, agent action, approval gate, condition
+- [x] Node creation, deletion, and positioning
+- [x] Workflow name input
+- [x] Node list sidebar with quick access
+- [ ] Workflow execution engine (pending deployment)
+- [ ] Workflow testing and dry-run mode (pending)
+- [ ] Edge drawing and connection logic (pending)
