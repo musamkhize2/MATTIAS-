@@ -32,7 +32,9 @@ export async function createDataSource(
     isActive: true,
   });
 
-  const sourceId = (result as unknown as { insertId: number }).insertId;
+  // Drizzle returns insertId in the result object
+  const insertResult = result as any;
+  const sourceId = insertResult.insertId || insertResult[0]?.insertId || 0;
   const webhookUrl =
     type === "webhook"
       ? `${process.env.VITE_FRONTEND_FORGE_API_URL || "https://mattias.local"}/api/webhooks/${sourceId}`
@@ -104,7 +106,9 @@ export async function createCRMConnector(
     isActive: true,
   });
 
-  return (result as unknown as { insertId: number }).insertId;
+  // Drizzle returns the result with insertId in a specific format
+  const insertResult = result as any;
+  return insertResult.insertId || insertResult[0]?.insertId || 0;
 }
 
 export async function getCRMConnectors(tenantId: number) {

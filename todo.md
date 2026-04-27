@@ -76,6 +76,18 @@
 - [x] Node creation, deletion, and positioning
 - [x] Workflow name input
 - [x] Node list sidebar with quick access
-- [ ] Workflow execution engine (pending deployment)
-- [ ] Workflow testing and dry-run mode (pending)
-- [ ] Edge drawing and connection logic (pending)
+- [x] Workflow execution engine with context management
+- [x] Workflow testing and dry-run mode
+- [x] Edge drawing and connection logic with visual feedback
+- [x] Connection ports on nodes (hover to reveal)
+- [x] Edge deletion with midpoint buttons
+- [x] Workflow routers integrated into tRPC API
+
+## Database & Testing (COMPLETED)
+
+- [x] All database migrations applied (data_sources, crm_connectors tables created)
+- [x] 18 vitest tests passing (auth, orchestration, integration)
+- [x] Data source creation and management tests
+- [x] CRM connector tests with event mapping
+- [x] Webhook event processing tests
+- [x] Event type mapping validation

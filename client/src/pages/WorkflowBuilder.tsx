@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Play, Save, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Play, Save, ChevronRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -32,6 +32,8 @@ export default function WorkflowBuilder() {
   const [edges, setEdges] = useState<WorkflowEdge[]>([]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [draggedType, setDraggedType] = useState<string | null>(null);
+  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [tempLine, setTempLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
   const addNode = (type: string, x: number, y: number) => {
     const newNode: WorkflowNode = {
@@ -48,6 +50,48 @@ export default function WorkflowBuilder() {
   const deleteNode = (id: string) => {
     setNodes(nodes.filter((n) => n.id !== id));
     setEdges(edges.filter((e) => e.source !== id && e.target !== id));
+  };
+
+  const startConnection = (nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConnectingFrom(nodeId);
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (!connectingFrom) return;
+    const source = nodes.find((n) => n.id === connectingFrom);
+    if (!source) return;
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setTempLine({
+      x1: source.x + 40,
+      y1: source.y + 40,
+      x2: e.clientX - rect.left,
+      y2: e.clientY - rect.top,
+    });
+  };
+
+  const finishConnection = (targetId: string) => {
+    if (!connectingFrom || connectingFrom === targetId) {
+      setConnectingFrom(null);
+      setTempLine(null);
+      return;
+    }
+
+    const newEdge: WorkflowEdge = {
+      id: `edge-${Date.now()}`,
+      source: connectingFrom,
+      target: targetId,
+    };
+
+    setEdges([...edges, newEdge]);
+    setConnectingFrom(null);
+    setTempLine(null);
+    toast.success("Connection created");
+  };
+
+  const deleteEdge = (edgeId: string) => {
+    setEdges(edges.filter((e) => e.id !== edgeId));
   };
 
   const handleCanvasDrop = (e: React.DragEvent) => {
@@ -85,6 +129,17 @@ export default function WorkflowBuilder() {
           <Button
             variant="outline"
             className="text-sm gap-2"
+            onClick={() => {
+              if (!workflowName) {
+                toast.error("Please enter a workflow name");
+                return;
+              }
+              if (nodes.length === 0) {
+                toast.error("Please add at least one node");
+                return;
+              }
+              toast.success(`Testing workflow "${workflowName}" with ${nodes.length} nodes and ${edges.length} connections...`);
+            }}
             style={{ borderColor: "oklch(0.25 0.02 260)", color: "oklch(0.6 0.02 260)" }}
           >
             <Play size={14} />
@@ -92,6 +147,13 @@ export default function WorkflowBuilder() {
           </Button>
           <Button
             className="text-sm gap-2"
+            onClick={() => {
+              if (!workflowName) {
+                toast.error("Please enter a workflow name");
+                return;
+              }
+              toast.success(`Workflow "${workflowName}" saved with ${nodes.length} nodes and ${edges.length} connections`);
+            }}
             style={{ background: "oklch(0.65 0.22 270)", color: "white" }}
           >
             <Save size={14} />
@@ -173,6 +235,11 @@ export default function WorkflowBuilder() {
           style={{ background: "oklch(0.13 0.015 260)", border: "1px solid oklch(0.22 0.02 260)" }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleCanvasDrop}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={() => {
+            setConnectingFrom(null);
+            setTempLine(null);
+          }}
         >
           {nodes.length === 0 ? (
             <div className="flex items-center justify-center h-full">
@@ -185,23 +252,43 @@ export default function WorkflowBuilder() {
             </div>
           ) : (
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
+              {/* Existing edges */}
               {edges.map((edge) => {
                 const source = nodes.find((n) => n.id === edge.source);
                 const target = nodes.find((n) => n.id === edge.target);
                 if (!source || !target) return null;
 
                 return (
-                  <line
-                    key={edge.id}
-                    x1={source.x + 40}
-                    y1={source.y + 40}
-                    x2={target.x + 40}
-                    y2={target.y + 40}
-                    stroke="oklch(0.65 0.22 270)"
-                    strokeWidth="2"
-                  />
+                  <g key={edge.id}>
+                    <line
+                      x1={source.x + 40}
+                      y1={source.y + 40}
+                      x2={target.x + 40}
+                      y2={target.y + 40}
+                      stroke="oklch(0.65 0.22 270)"
+                      strokeWidth="2"
+                    />
+                    {/* Arrow head */}
+                    <polygon
+                      points={`${target.x + 40},${target.y + 40} ${target.x + 35},${target.y + 35} ${target.x + 35},${target.y + 45}`}
+                      fill="oklch(0.65 0.22 270)"
+                    />
+                  </g>
                 );
               })}
+              {/* Temporary line while connecting */}
+              {tempLine && (
+                <line
+                  x1={tempLine.x1}
+                  y1={tempLine.y1}
+                  x2={tempLine.x2}
+                  y2={tempLine.y2}
+                  stroke="oklch(0.65 0.22 270)"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                  opacity="0.6"
+                />
+              )}
             </svg>
           )}
 
@@ -214,7 +301,13 @@ export default function WorkflowBuilder() {
                 onDragStart={() => setSelectedNode(node.id)}
                 onDrag={(e) => handleNodeDrag(node.id, e)}
                 onClick={() => setSelectedNode(node.id)}
-                className="absolute w-24 h-24 rounded-lg p-2 cursor-move transition-all hover:shadow-lg"
+                onMouseUp={(e) => {
+                  e.stopPropagation();
+                  if (connectingFrom && connectingFrom !== node.id) {
+                    finishConnection(node.id);
+                  }
+                }}
+                className="absolute w-24 h-24 rounded-lg p-2 cursor-move transition-all hover:shadow-lg group"
                 style={{
                   left: `${node.x}px`,
                   top: `${node.y}px`,
@@ -222,25 +315,72 @@ export default function WorkflowBuilder() {
                   border: `2px solid ${selectedNode === node.id ? nodeType?.color : `${nodeType?.color}50`}`,
                 }}
               >
-                <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="flex flex-col items-center justify-center h-full text-center relative">
                   <div className="text-2xl">{nodeType?.icon}</div>
                   <p className="text-xs font-medium text-white mt-1 line-clamp-2">{node.label}</p>
+                  
+                  {/* Connection port */}
+                  <div
+                    className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 rounded-full cursor-crosshair opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: nodeType?.color }}
+                    onMouseDown={(e) => startConnection(node.id, e as any)}
+                    title="Drag to connect"
+                  />
+                  
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNode(node.id);
+                    }}
+                    className="absolute -top-2 -right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: "oklch(0.6 0.22 25)" }}
+                  >
+                    <X size={10} className="text-white" />
+                  </button>
                 </div>
               </div>
+            );
+          })}
+
+          {/* Edge delete buttons */}
+          {edges.map((edge) => {
+            const source = nodes.find((n) => n.id === edge.source);
+            const target = nodes.find((n) => n.id === edge.target);
+            if (!source || !target) return null;
+
+            const midX = (source.x + target.x) / 2 + 40;
+            const midY = (source.y + target.y) / 2 + 40;
+
+            return (
+              <button
+                key={`delete-${edge.id}`}
+                onClick={() => deleteEdge(edge.id)}
+                className="absolute w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500/20 transition-colors"
+                style={{
+                  left: `${midX - 12}px`,
+                  top: `${midY - 12}px`,
+                  background: "oklch(0.6 0.22 25 / 0.1)",
+                  border: "1px solid oklch(0.6 0.22 25 / 0.3)",
+                }}
+                title="Delete connection"
+              >
+                <X size={12} style={{ color: "oklch(0.6 0.22 25)" }} />
+              </button>
             );
           })}
         </div>
       </div>
 
       {/* Info */}
-      <div
-        className="rounded-xl p-3 text-xs"
-        style={{ background: "oklch(0.13 0.015 260)", border: "1px solid oklch(0.22 0.02 260)" }}
-      >
-        <p style={{ color: "oklch(0.55 0.02 260)" }}>
-          💡 Drag nodes onto the canvas. Click nodes to configure. Connect them by drawing edges to create your workflow logic.
-        </p>
-      </div>
+        <div
+          className="rounded-xl p-3 text-xs"
+          style={{ background: "oklch(0.13 0.015 260)", border: "1px solid oklch(0.22 0.02 260)" }}
+        >
+          <p style={{ color: "oklch(0.55 0.02 260)" }}>
+            💡 Drag nodes onto the canvas. Hover over nodes to see the connection port (colored dot). Click and drag from the port to connect nodes. Click the X on connections to delete them.
+          </p>
+        </div>
     </div>
   );
 }

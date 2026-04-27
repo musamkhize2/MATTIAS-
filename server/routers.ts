@@ -20,6 +20,7 @@ import {
   createPolicy,
 } from "./db";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
+import { workflowsRouter } from "./mattias/workflowRouters";
 import {
   orchestrateEvent,
   runMATTIASCommand,
@@ -243,6 +244,7 @@ export const appRouter = router({
   dataSources: dataSourcesRouter,
   crmConnectors: crmConnectorsRouter,
   webhooks: webhooksRouter,
+  workflows: workflowsRouter,
 
   policies: router({
     list: protectedProcedure.query(async ({ ctx }) => {
