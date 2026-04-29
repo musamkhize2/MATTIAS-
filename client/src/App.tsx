@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard";
 import CRMMarketplace from "./pages/CRMMarketplace";
 import DataSources from "./pages/DataSources";
 import WorkflowBuilder from "./pages/WorkflowBuilder";
+import VoiceInterface from "./pages/VoiceInterface";
+import BusinessProfiles from "./pages/BusinessProfiles";
 
 function Router() {
   return (
@@ -31,8 +33,9 @@ function Router() {
         <Route path="/policies" component={PolicyManager} />
         <Route path="/crm-marketplace" component={CRMMarketplace} />
         <Route path="/data-sources" component={DataSources} />
-        <Route path="/workflows" component={WorkflowBuilder} />
-        <Route path="/404" component={NotFound} />
+      <Route path={"/workflow-builder"} component={WorkflowBuilder} />
+      <Route path={"/voice-interface"} component={VoiceInterface} />
+      <Route path={"/business-profiles"} component={BusinessProfiles} />  <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </MATTIASLayout>

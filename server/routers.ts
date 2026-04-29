@@ -19,6 +19,7 @@ import {
   upsertAgentConfig,
   createPolicy,
 } from "./db";
+import { businessProfileRouter, integrationCredentialRouter } from "./mattias/businessProfileRouters";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
 import {
@@ -245,6 +246,8 @@ export const appRouter = router({
   crmConnectors: crmConnectorsRouter,
   webhooks: webhooksRouter,
   workflows: workflowsRouter,
+  businessProfiles: businessProfileRouter,
+  integrationCredentials: integrationCredentialRouter,
 
   policies: router({
     list: protectedProcedure.query(async ({ ctx }) => {

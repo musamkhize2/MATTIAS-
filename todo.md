@@ -91,3 +91,55 @@
 - [x] CRM connector tests with event mapping
 - [x] Webhook event processing tests
 - [x] Event type mapping validation
+
+
+## Business Profile Layer (NEW - CRITICAL)
+
+- [x] business_profiles table schema (identity, online presence, financial targets, time/language, AI config)
+- [x] Business profile management tRPC router (list, create, update, delete)
+- [x] Business profile UI page (create, edit, view profiles)
+- [ ] Profile parameter extraction from website/document
+- [x] Multi-business isolation and fencing (via tenantId)
+
+## Integration Verification & Credential Management (NEW)
+
+- [x] Integration verification pipeline (test connections before use)
+- [x] Credential storage with bank-level security (AES-256 encryption)
+- [x] Credential management tRPC router
+- [x] Verification status tracking (pending, verified, failed, expired)
+- [ ] Secure credential management UI page
+- [ ] Connection health status dashboard
+- [ ] Credential rotation and expiry handling
+
+## Per-Transaction Authorization & Multi-Role Approval (NEW)
+
+- [x] Multi-role approvals table schema
+- [x] Multi-role approval chain management
+- [x] Approval tracking with role-based sign-off
+- [ ] Multi-factor approval chains (pending UI)
+- [ ] Per-transaction policies for sensitive actions
+- [ ] Enhanced approval queue with multi-role support
+- [ ] Audit trail for all approvals
+
+## Marketing Automation (NEW)
+
+- [ ] Ad platform integrations (Google Ads, Meta, TikTok, YouTube)
+- [ ] Marketing Agent for campaign creation and optimization
+- [ ] Campaign optimization workflow
+- [ ] Budget safeguards and policy enforcement
+- [ ] Campaign performance tracking
+
+## Voice Interface (NEW)
+
+- [x] Voice input pipeline (Web Speech API integration)
+- [x] Voice command processing and MATTIAS command integration
+- [x] Voice output (text-to-speech responses)
+- [x] Voice-based approval interface
+- [x] Voice command history and logs
+- [x] VoiceInterface page with full UI
+
+## Recommendations Implementation (NEW)
+
+- [ ] Real CRM OAuth flows (HubSpot, Salesforce, Pipedrive)
+- [ ] Webhook event replay UI
+- [ ] Agent reasoning transparency in Approval Queue

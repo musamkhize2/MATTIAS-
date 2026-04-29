@@ -10,6 +10,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const users = mysqlTable("users", {
@@ -219,3 +220,108 @@ export const crmConnectors = mysqlTable("crm_connectors", {
 
 export type CRMConnector = typeof crmConnectors.$inferSelect;
 export type InsertCRMConnector = typeof crmConnectors.$inferInsert;
+
+
+// ─── Business Profiles ────────────────────────────────────────────────────────
+export const businessProfiles = mysqlTable("business_profiles", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  ownerUserId: int("ownerUserId").notNull(),
+  
+  // Identity
+  name: varchar("name", { length: 255 }).notNull(),
+  legalName: varchar("legalName", { length: 255 }),
+  description: text("description"),
+  industry: varchar("industry", { length: 128 }),
+  businessActivities: json("businessActivities").$type<string[]>(),
+  
+  // Online Presence
+  websiteUrl: varchar("websiteUrl", { length: 512 }),
+  logoUrl: varchar("logoUrl", { length: 512 }),
+  
+  // Financial & Sales Targets
+  annualRevenueTarget: float("annualRevenueTarget"),
+  monthlyRevenueTarget: float("monthlyRevenueTarget"),
+  avgDealSize: float("avgDealSize"),
+  avgUnitPrice: float("avgUnitPrice"),
+  targetMarginPercent: float("targetMarginPercent"),
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  
+  // Time & Language
+  operationalHours: json("operationalHours").$type<{
+    start: string;
+    end: string;
+    timezone: string;
+  }>(),
+  defaultLanguage: varchar("defaultLanguage", { length: 10 }).default("en"),
+  
+  // MATTIAS AI Config
+  aiConfig: json("aiConfig").$type<{
+    riskTolerance: "low" | "moderate" | "high";
+    communicationTone: "professional" | "casual" | "formal";
+  }>(),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BusinessProfile = typeof businessProfiles.$inferSelect;
+export type InsertBusinessProfile = typeof businessProfiles.$inferInsert;
+
+// ─── Integration Credentials ──────────────────────────────────────────────────
+export const integrationCredentials = mysqlTable("integration_credentials", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  businessProfileId: varchar("businessProfileId", { length: 36 }),
+  
+  integrationType: varchar("integrationType", { length: 64 }).notNull(), // 'crm', 'payment', 'ad_platform', 'email', etc.
+  integrationName: varchar("integrationName", { length: 128 }).notNull(), // 'hubspot', 'stripe', 'google_ads', etc.
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  
+  // Encrypted credentials
+  encryptedCredentials: text("encryptedCredentials").notNull(),
+  credentialType: mysqlEnum("credentialType", ["api_key", "oauth_token", "basic_auth", "custom"]).notNull(),
+  
+  // OAuth specific
+  oauthToken: text("oauthToken"),
+  refreshToken: text("refreshToken"),
+  tokenExpiresAt: timestamp("tokenExpiresAt"),
+  
+  // Verification
+  isVerified: boolean("isVerified").default(false),
+  verificationStatus: mysqlEnum("verificationStatus", ["pending", "verified", "failed", "expired"]).default("pending"),
+  lastVerifiedAt: timestamp("lastVerifiedAt"),
+  verificationError: text("verificationError"),
+  
+  // Usage
+  isActive: boolean("isActive").default(true),
+  lastUsedAt: timestamp("lastUsedAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type IntegrationCredential = typeof integrationCredentials.$inferSelect;
+export type InsertIntegrationCredential = typeof integrationCredentials.$inferInsert;
+
+// ─── Multi-Role Approvals ────────────────────────────────────────────────────
+export const multiRoleApprovals = mysqlTable("multi_role_approvals", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  approvalId: varchar("approvalId", { length: 36 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  
+  requiredRoles: json("requiredRoles").$type<string[]>().notNull(),
+  approvalChain: json("approvalChain").$type<{
+    role: string;
+    approvedBy?: number;
+    approvedAt?: number;
+    status: "pending" | "approved" | "rejected";
+  }[]>().notNull(),
+  
+  allApprovalsReceived: boolean("allApprovalsReceived").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MultiRoleApproval = typeof multiRoleApprovals.$inferSelect;
+export type InsertMultiRoleApproval = typeof multiRoleApprovals.$inferInsert;
