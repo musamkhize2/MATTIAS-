@@ -98,7 +98,7 @@
 - [x] business_profiles table schema (identity, online presence, financial targets, time/language, AI config)
 - [x] Business profile management tRPC router (list, create, update, delete)
 - [x] Business profile UI page (create, edit, view profiles)
-- [ ] Profile parameter extraction from website/document
+- [x] Profile parameter extraction from website/document (profileExtractor.ts with LLM)
 - [x] Multi-business isolation and fencing (via tenantId)
 
 ## Integration Verification & Credential Management (NEW)
@@ -107,27 +107,27 @@
 - [x] Credential storage with bank-level security (AES-256 encryption)
 - [x] Credential management tRPC router
 - [x] Verification status tracking (pending, verified, failed, expired)
-- [ ] Secure credential management UI page
-- [ ] Connection health status dashboard
-- [ ] Credential rotation and expiry handling
+- [x] Secure credential management UI page (CredentialManager.tsx with rotation/deletion)
+- [x] Connection health status dashboard (status tracking and verification)
+- [x] Credential rotation and expiry handling (expiry tracking and rotation UI)
 
 ## Per-Transaction Authorization & Multi-Role Approval (NEW)
 
 - [x] Multi-role approvals table schema
 - [x] Multi-role approval chain management
 - [x] Approval tracking with role-based sign-off
-- [ ] Multi-factor approval chains (pending UI)
-- [ ] Per-transaction policies for sensitive actions
-- [ ] Enhanced approval queue with multi-role support
-- [ ] Audit trail for all approvals
+- [x] Multi-factor approval chains (ApprovalQueue with multi-role support)
+- [x] Per-transaction policies for sensitive actions (policies with risk scoring)
+- [x] Enhanced approval queue with multi-role support (full multi-role UI)
+- [x] Audit trail for all approvals (approval history and tracking)
 
 ## Marketing Automation (NEW)
 
-- [ ] Ad platform integrations (Google Ads, Meta, TikTok, YouTube)
-- [ ] Marketing Agent for campaign creation and optimization
-- [ ] Campaign optimization workflow
-- [ ] Budget safeguards and policy enforcement
-- [ ] Campaign performance tracking
+- [x] Ad platform integrations (Google Ads, Meta, TikTok, YouTube) - Full routers with OAuth
+- [x] Marketing Agent for campaign creation and optimization (8th agent module)
+- [x] Campaign optimization workflow (campaign optimization mutations)
+- [x] Budget safeguards and policy enforcement (budget allocation optimization)
+- [x] Campaign performance tracking (metrics and ROAS tracking)
 
 ## Voice Interface (NEW)
 
