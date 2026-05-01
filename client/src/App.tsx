@@ -20,7 +20,6 @@ import VoiceInterface from "./pages/VoiceInterface";
 import BusinessProfiles from "./pages/BusinessProfiles";
 import WebhookReplay from "./pages/WebhookReplay";
 import ApprovalReasoning from "./pages/ApprovalReasoning";
-import CredentialManager from "./pages/CredentialManager";
 
 function Router() {
   return (
@@ -40,9 +39,7 @@ function Router() {
       <Route path={"/voice-interface"} component={VoiceInterface} />
       <Route path={"/business-profiles"} component={BusinessProfiles} />
       <Route path={"/webhook-replay"} component={WebhookReplay} />
-      <Route path={"/approval-reasoning"} component={ApprovalReasoning} />
-      <Route path={"/credential-manager"} component={CredentialManager} />
-      <Route path="/404" component={NotFound} />
+      <Route path={"/approval-reasoning"} component={ApprovalReasoning} />  <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </MATTIASLayout>
