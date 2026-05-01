@@ -21,6 +21,7 @@ import {
 } from "./db";
 import { businessProfileRouter, integrationCredentialRouter } from "./mattias/businessProfileRouters";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
+import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
 import {
   orchestrateEvent,
@@ -246,6 +247,9 @@ export const appRouter = router({
   crmConnectors: crmConnectorsRouter,
   webhooks: webhooksRouter,
   workflows: workflowsRouter,
+  webhookReplay: webhookReplayRouter,
+  approvalReasoning: approvalReasoningRouter,
+  crmOAuth: crmOAuthRouter,
   businessProfiles: businessProfileRouter,
   integrationCredentials: integrationCredentialRouter,
 

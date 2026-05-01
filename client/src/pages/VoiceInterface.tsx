@@ -15,6 +15,9 @@ export default function VoiceInterface() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recognitionRef = useRef<any>(null);
 
+  // Declare mutation at component scope
+  const commandMutation = trpc.command.send.useMutation();
+
   useEffect(() => {
     // Initialize Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -76,25 +79,24 @@ export default function VoiceInterface() {
     setIsProcessing(true);
     try {
       // Call MATTIAS command interface with voice input
-      const mutation = trpc.command.send.useMutation();
-      const response = await mutation.mutateAsync({
+      const response = await commandMutation.mutateAsync({
         message: transcript,
       });
 
-      const responseText = typeof response === 'string' ? response : response.response;
+      const responseText = typeof response === "string" ? response : response.response;
       setResponse(responseText);
       setVoiceHistory((prev) => [
         ...prev,
         {
           input: transcript,
-          output: typeof response === 'string' ? response : response.response,
+          output: responseText,
           timestamp: new Date(),
         },
       ]);
 
       // Speak the response
       if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(typeof response === 'string' ? response : response.response);
+        const utterance = new SpeechSynthesisUtterance(responseText);
         utterance.rate = 0.9;
         window.speechSynthesis.speak(utterance);
       }
