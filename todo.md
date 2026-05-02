@@ -167,3 +167,38 @@
 - [x] 18 vitest tests passing
 - [x] Dark-themed dashboard with full UI
 - [x] Production-ready deployment on mattiasai-g6u5hsty.manus.space
+
+## Business Plan Research Enhancement (NEW)
+
+- [x] Smart research parameters (industry, market size, target audience, competitor analysis, regulatory landscape)
+- [x] Context-aware research queries based on business profile
+- [x] Research result aggregation and synthesis
+- [x] Research history and caching
+- [x] Research quality scoring
+
+## OAuth Callback Handlers (NEW)
+
+- [x] HubSpot OAuth callback handler (/api/oauth/hubspot/callback)
+- [x] Salesforce OAuth callback handler (/api/oauth/salesforce/callback)
+- [x] Pipedrive OAuth callback handler (/api/oauth/pipedrive/callback)
+- [x] Google Ads OAuth callback handler (/api/oauth/google-ads/callback)
+- [x] Meta OAuth callback handler (/api/oauth/meta/callback)
+- [x] TikTok OAuth callback handler (/api/oauth/tiktok/callback)
+- [x] YouTube OAuth callback handler (/api/oauth/youtube/callback)
+- [x] Token refresh and expiry management
+
+## Approval Workflow Automation (NEW)
+
+- [x] Conditional routing based on approval type and risk score
+- [x] Auto-escalation rules (e.g., risk > 8000 → CEO)
+- [x] Slack/email notifications for pending approvals
+- [x] Approval timeout and reminder workflows
+- [x] Approval delegation and reassignment
+
+## Agent Fine-Tuning Dashboard (NEW)
+
+- [x] Agent personality adjustment (conservative to aggressive)
+- [x] Risk tolerance configuration per agent
+- [x] Custom reasoning prompt editor
+- [x] Agent performance metrics and analytics
+- [x] A/B testing framework for agent configurations

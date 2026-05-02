@@ -20,6 +20,7 @@ import VoiceInterface from "./pages/VoiceInterface";
 import BusinessProfiles from "./pages/BusinessProfiles";
 import WebhookReplay from "./pages/WebhookReplay";
 import ApprovalReasoning from "./pages/ApprovalReasoning";
+import AgentFineTuning from "./pages/AgentFineTuning";
 
 function Router() {
   return (
@@ -38,8 +39,10 @@ function Router() {
       <Route path={"/workflow-builder"} component={WorkflowBuilder} />
       <Route path={"/voice-interface"} component={VoiceInterface} />
       <Route path={"/business-profiles"} component={BusinessProfiles} />
-      <Route path={"/webhook-replay"} component={WebhookReplay} />
-      <Route path={"/approval-reasoning"} component={ApprovalReasoning} />  <Route path="/404" component={NotFound} />
+        <Route path="/webhook-replay" component={WebhookReplay} />
+        <Route path="/approval-reasoning" component={ApprovalReasoning} />
+        <Route path="/agent-fine-tuning" component={AgentFineTuning} />
+        <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </MATTIASLayout>

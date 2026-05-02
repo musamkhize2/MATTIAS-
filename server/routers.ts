@@ -20,6 +20,8 @@ import {
   createPolicy,
 } from "./db";
 import { businessProfileRouter, integrationCredentialRouter } from "./mattias/businessProfileRouters";
+import { businessPlanRouter } from "./mattias/businessPlanRouters";
+import { agentFineTuningRouter } from "./mattias/agentFineTuningRouters";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
@@ -247,6 +249,8 @@ export const appRouter = router({
   crmConnectors: crmConnectorsRouter,
   webhooks: webhooksRouter,
   workflows: workflowsRouter,
+  businessPlan: businessPlanRouter,
+  agentFineTuning: agentFineTuningRouter,
   webhookReplay: webhookReplayRouter,
   approvalReasoning: approvalReasoningRouter,
   crmOAuth: crmOAuthRouter,
