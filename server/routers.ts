@@ -23,6 +23,7 @@ import { businessProfileRouter, integrationCredentialRouter } from "./mattias/bu
 import { businessPlanRouter } from "./mattias/businessPlanRouters";
 import { agentFineTuningRouter } from "./mattias/agentFineTuningRouters";
 import { extractFromWebsite, extractFromDocument } from "./mattias/documentIngestion";
+import { scrapeCompanyWebsite, validateAndCleanCompanyData } from "./mattias/webScraper";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
@@ -257,6 +258,27 @@ export const appRouter = router({
   crmOAuth: crmOAuthRouter,
   businessProfiles: businessProfileRouter,
   integrationCredentials: integrationCredentialRouter,
+
+  // ─── Company Web Scraper ──────────────────────────────────────────────────
+  companyWebScraper: router({
+    scrapeWebsite: protectedProcedure
+      .input(z.object({ url: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const scrapedData = await scrapeCompanyWebsite(input.url);
+          const cleanedData = validateAndCleanCompanyData(scrapedData);
+          return {
+            success: true,
+            data: cleanedData,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error occurred",
+          };
+        }
+      }),
+  }),
 
   // ─── Document Ingestion ────────────────────────────────────────────────────
   documentIngestion: router({

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { WebsiteAnalyzerDialog } from "@/components/WebsiteAnalyzerDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +68,32 @@ interface CompanyFormData {
   contactEmail: string;
   contactPhone: string;
   location: string;
+}
+
+// Extend Company interface to include additional fields from web scraper
+interface ExtendedCompanyData extends Company {
+  missionStatement?: string;
+  visionStatement?: string;
+  coreValues?: string[];
+  keyProducts?: string[];
+  keyServices?: string[];
+  targetMarket?: string;
+  technologies?: string[];
+  certifications?: string[];
+  awards?: string[];
+  partnerships?: string[];
+  fundingStage?: string;
+  fundingAmount?: number;
+  investors?: string[];
+  teamSize?: number;
+  officeLocations?: string[];
+  recentNews?: string[];
+  socialLinks?: {
+    linkedin?: string;
+    twitter?: string;
+    facebook?: string;
+    instagram?: string;
+  };
 }
 
 const mockCompanies: Company[] = [
@@ -466,6 +493,22 @@ export default function CompanyManager() {
     setCompanies((prev) => prev.filter((c) => c.id !== id));
   };
 
+  const handleWebsiteDataExtracted = (extractedData: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: extractedData.name || prev.name,
+      industry: extractedData.industry || prev.industry,
+      website: extractedData.website || prev.website,
+      description: extractedData.description || prev.description,
+      monthlyRevenue: extractedData.monthlyRevenue?.toString() || prev.monthlyRevenue,
+      employeeCount: extractedData.employeeCount?.toString() || prev.employeeCount,
+      foundedYear: extractedData.foundedYear?.toString() || prev.foundedYear,
+      contactEmail: extractedData.contactEmail || prev.contactEmail,
+      contactPhone: extractedData.contactPhone || prev.contactPhone,
+      location: extractedData.location || prev.location,
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -493,11 +536,16 @@ export default function CompanyManager() {
                   : "Enter company information to get started with tracking"}
               </DialogDescription>
             </DialogHeader>
-            <CompanyForm
-              initialData={formData}
-              onSubmit={handleSubmitForm}
-              onCancel={() => setIsDialogOpen(false)}
-            />
+            <div className="space-y-4">
+              <WebsiteAnalyzerDialog onDataExtracted={handleWebsiteDataExtracted} />
+              <div style={{ borderTop: "1px solid oklch(0.22 0.02 260)", paddingTop: "1rem" }}>
+                <CompanyForm
+                  initialData={formData}
+                  onSubmit={handleSubmitForm}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
