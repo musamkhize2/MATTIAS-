@@ -24,6 +24,7 @@ import AgentFineTuning from "./pages/AgentFineTuning";
 import { CredentialManager } from "./pages/CredentialManager";
 import IntegrationHealth from "./pages/IntegrationHealth";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
+import CompanyManager from "./pages/CompanyManager";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
         <Route path="/credentials" component={CredentialManager} />
         <Route path="/integration-health" component={IntegrationHealth} />
         <Route path="/campaigns" component={MarketingCampaigns} />
+        <Route path="/companies" component={CompanyManager} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

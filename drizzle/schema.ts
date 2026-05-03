@@ -399,3 +399,103 @@ export const credentialRotationPolicies = mysqlTable("credential_rotation_polici
 
 export type CredentialRotationPolicy = typeof credentialRotationPolicies.$inferSelect;
 export type InsertCredentialRotationPolicy = typeof credentialRotationPolicies.$inferInsert;
+
+// ─── Company Management ────────────────────────────────────────────────────
+export const companies = mysqlTable("companies", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  userId: int("userId").notNull(),
+  
+  // Company Details
+  name: varchar("name", { length: 255 }).notNull(),
+  industry: varchar("industry", { length: 128 }),
+  website: varchar("website", { length: 255 }),
+  description: text("description"),
+  
+  // Company Metrics
+  monthlyRevenue: float("monthlyRevenue"),
+  employeeCount: int("employeeCount"),
+  foundedYear: int("foundedYear"),
+  
+  // Contact Information
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  contactPhone: varchar("contactPhone", { length: 20 }),
+  
+  // Additional Details
+  location: varchar("location", { length: 255 }),
+  socialMediaLinks: json("socialMediaLinks"), // { linkedin, twitter, facebook, instagram }
+  customMetrics: json("customMetrics"), // Flexible field for custom KPIs
+  
+  // Status
+  isActive: boolean("isActive").default(true),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;
+
+// ─── Company Memory System ────────────────────────────────────────────────
+export const companyMemory = mysqlTable("company_memory", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  companyId: varchar("companyId", { length: 36 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  
+  // Memory Categories
+  memoryType: mysqlEnum("memoryType", [
+    "interaction_history",
+    "performance_notes",
+    "campaign_insights",
+    "customer_feedback",
+    "market_analysis",
+    "strategic_goals",
+    "custom_note",
+  ]).notNull(),
+  
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  
+  // Metadata
+  tags: json("tags"), // Array of tags for organization
+  importance: mysqlEnum("importance", ["low", "medium", "high"]).default("medium"),
+  
+  // AI-generated insights
+  aiInsights: text("aiInsights"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanyMemory = typeof companyMemory.$inferSelect;
+export type InsertCompanyMemory = typeof companyMemory.$inferInsert;
+
+// ─── Company Performance Metrics ───────────────────────────────────────────
+export const companyMetrics = mysqlTable("company_metrics", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  companyId: varchar("companyId", { length: 36 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  
+  // Campaign Metrics
+  totalCampaigns: int("totalCampaigns").default(0),
+  activeCampaigns: int("activeCampaigns").default(0),
+  totalAdSpend: float("totalAdSpend").default(0),
+  totalConversions: int("totalConversions").default(0),
+  averageROAS: float("averageROAS").default(0),
+  
+  // Performance Indicators
+  leadGenerated: int("leadGenerated").default(0),
+  conversionRate: float("conversionRate").default(0),
+  customerAcquisitionCost: float("customerAcquisitionCost").default(0),
+  
+  // Growth Metrics
+  monthOverMonthGrowth: float("monthOverMonthGrowth").default(0),
+  yearOverYearGrowth: float("yearOverYearGrowth").default(0),
+  
+  // Last Updated
+  lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CompanyMetrics = typeof companyMetrics.$inferSelect;
+export type InsertCompanyMetrics = typeof companyMetrics.$inferInsert;
