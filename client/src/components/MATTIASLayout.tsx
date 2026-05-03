@@ -11,9 +11,12 @@ import {
   CircleDot,
   ClipboardList,
   Heart,
+  Key,
   Layers,
   LogOut,
   MessageSquare,
+  Monitor,
+  BarChart3,
   Scale,
   Settings,
   Shield,
@@ -240,6 +243,7 @@ export default function MATTIASLayout({ children }: { children: ReactNode }) {
             <NavItem href="/autonomy" icon={Settings} label="Autonomy Controls" active={location === "/autonomy"} />
             <NavItem href="/memory" icon={Brain} label="Memory Explorer" active={location === "/memory"} />
             <NavItem href="/policies" icon={ClipboardList} label="Policy Manager" active={location === "/policies"} />
+            <NavItem href="/credentials" icon={Key} label="Credentials" active={location === "/credentials"} />
           </div>
 
           <div className="pt-2">
@@ -249,6 +253,8 @@ export default function MATTIASLayout({ children }: { children: ReactNode }) {
             <NavItem href="/data-sources" icon={Webhook} label="Data Sources" active={location === "/data-sources"} />
             <NavItem href="/crm-marketplace" icon={Zap} label="CRM Marketplace" active={location === "/crm-marketplace"} />
             <NavItem href="/workflows" icon={GitBranch} label="Workflow Builder" active={location === "/workflows"} />
+            <NavItem href="/integration-health" icon={Monitor} label="Health Status" active={location === "/integration-health"} />
+            <NavItem href="/campaigns" icon={BarChart3} label="Campaigns" active={location === "/campaigns"} />
           </div>
         </nav>
 

@@ -22,6 +22,7 @@ import {
 import { businessProfileRouter, integrationCredentialRouter } from "./mattias/businessProfileRouters";
 import { businessPlanRouter } from "./mattias/businessPlanRouters";
 import { agentFineTuningRouter } from "./mattias/agentFineTuningRouters";
+import { extractFromWebsite, extractFromDocument } from "./mattias/documentIngestion";
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
@@ -257,6 +258,20 @@ export const appRouter = router({
   businessProfiles: businessProfileRouter,
   integrationCredentials: integrationCredentialRouter,
 
+  // ─── Document Ingestion ────────────────────────────────────────────────────
+  documentIngestion: router({
+    extractFromWebsite: protectedProcedure
+      .input(z.object({ url: z.string().url() }))
+      .mutation(async ({ input }) => {
+        return extractFromWebsite(input.url);
+      }),
+
+    extractFromDocument: protectedProcedure
+      .input(z.object({ text: z.string(), name: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        return extractFromDocument(input.text, input.name);
+      }),
+  }),
   policies: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       const tenantId = await getTenantId(ctx.user.id);

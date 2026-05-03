@@ -325,3 +325,77 @@ export const multiRoleApprovals = mysqlTable("multi_role_approvals", {
 
 export type MultiRoleApproval = typeof multiRoleApprovals.$inferSelect;
 export type InsertMultiRoleApproval = typeof multiRoleApprovals.$inferInsert;
+
+// ─── Credential Rotation History ──────────────────────────────────────────
+export const credentialRotationHistory = mysqlTable("credential_rotation_history", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  credentialId: varchar("credentialId", { length: 36 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  
+  rotationType: mysqlEnum("rotationType", ["manual", "automatic", "emergency"]).notNull(),
+  oldTokenHash: text("oldTokenHash"),
+  newTokenHash: text("newTokenHash"),
+  
+  rotationStatus: mysqlEnum("rotationStatus", ["pending", "completed", "failed"]).default("pending"),
+  rotationError: text("rotationError"),
+  
+  rotatedBy: int("rotatedBy"), // userId who initiated rotation
+  rotatedAt: timestamp("rotatedAt"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CredentialRotationHistory = typeof credentialRotationHistory.$inferSelect;
+export type InsertCredentialRotationHistory = typeof credentialRotationHistory.$inferInsert;
+
+// ─── Credential Audit Trail ───────────────────────────────────────────────
+export const credentialAuditTrail = mysqlTable("credential_audit_trail", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  credentialId: varchar("credentialId", { length: 36 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  
+  action: mysqlEnum("action", [
+    "created",
+    "verified",
+    "used",
+    "rotated",
+    "refreshed",
+    "disabled",
+    "enabled",
+    "deleted",
+    "failed_verification",
+  ]).notNull(),
+  
+  actionDetails: json("actionDetails"),
+  performedBy: int("performedBy"), // userId
+  
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CredentialAuditTrail = typeof credentialAuditTrail.$inferSelect;
+export type InsertCredentialAuditTrail = typeof credentialAuditTrail.$inferInsert;
+
+// ─── Credential Rotation Policies ─────────────────────────────────────────
+export const credentialRotationPolicies = mysqlTable("credential_rotation_policies", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  
+  integrationName: varchar("integrationName", { length: 128 }).notNull(),
+  rotationIntervalDays: int("rotationIntervalDays").notNull().default(90),
+  
+  autoRotateEnabled: boolean("autoRotateEnabled").default(false),
+  rotationTime: varchar("rotationTime", { length: 5 }), // HH:MM format
+  
+  notifyBeforeDays: int("notifyBeforeDays").default(7),
+  requireApprovalForRotation: boolean("requireApprovalForRotation").default(false),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CredentialRotationPolicy = typeof credentialRotationPolicies.$inferSelect;
+export type InsertCredentialRotationPolicy = typeof credentialRotationPolicies.$inferInsert;

@@ -21,6 +21,9 @@ import BusinessProfiles from "./pages/BusinessProfiles";
 import WebhookReplay from "./pages/WebhookReplay";
 import ApprovalReasoning from "./pages/ApprovalReasoning";
 import AgentFineTuning from "./pages/AgentFineTuning";
+import { CredentialManager } from "./pages/CredentialManager";
+import IntegrationHealth from "./pages/IntegrationHealth";
+import MarketingCampaigns from "./pages/MarketingCampaigns";
 
 function Router() {
   return (
@@ -42,6 +45,9 @@ function Router() {
         <Route path="/webhook-replay" component={WebhookReplay} />
         <Route path="/approval-reasoning" component={ApprovalReasoning} />
         <Route path="/agent-fine-tuning" component={AgentFineTuning} />
+        <Route path="/credentials" component={CredentialManager} />
+        <Route path="/integration-health" component={IntegrationHealth} />
+        <Route path="/campaigns" component={MarketingCampaigns} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
