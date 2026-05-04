@@ -267,7 +267,32 @@ export const appRouter = router({
       .input(z.object({ url: z.string() }))
       .mutation(async ({ input }) => {
         try {
-          const scrapedData = await scrapeCompanyWebsite(input.url);
+          let url = input.url.trim();
+          if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+          }
+
+          // Verify URL is online before scraping
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            await fetch(url, {
+              method: "HEAD",
+              signal: controller.signal,
+            }).finally(() => clearTimeout(timeoutId));
+            clearTimeout(timeoutId);
+          } catch (fetchError) {
+            // Try GET request if HEAD fails
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            await fetch(url, {
+              signal: controller.signal,
+              headers: { "User-Agent": "Mozilla/5.0" },
+            }).finally(() => clearTimeout(timeoutId));
+            clearTimeout(timeoutId);
+          }
+
+          const scrapedData = await scrapeCompanyWebsite(url);
           const cleanedData = validateAndCleanCompanyData(scrapedData);
           return {
             success: true,
