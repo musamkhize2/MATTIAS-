@@ -310,7 +310,7 @@ export const appRouter = router({
   // ─── Document Ingestion ────────────────────────────────────────────────────
   documentIngestion: router({
     extractFromWebsite: protectedProcedure
-      .input(z.object({ url: z.string().url() }))
+      .input(z.object({ url: z.string() }))
       .mutation(async ({ input }) => {
         return extractFromWebsite(input.url);
       }),
