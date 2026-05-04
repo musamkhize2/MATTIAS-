@@ -20,6 +20,7 @@ import {
   createPolicy,
 } from "./db";
 import { businessProfileRouter, integrationCredentialRouter } from "./mattias/businessProfileRouters";
+import { companyRouter } from "./mattias/companyRouters";
 import { businessPlanRouter } from "./mattias/businessPlanRouters";
 import { agentFineTuningRouter } from "./mattias/agentFineTuningRouters";
 import { extractFromWebsite, extractFromDocument } from "./mattias/documentIngestion";
@@ -258,6 +259,7 @@ export const appRouter = router({
   crmOAuth: crmOAuthRouter,
   businessProfiles: businessProfileRouter,
   integrationCredentials: integrationCredentialRouter,
+  company: companyRouter,
 
   // ─── Company Web Scraper ──────────────────────────────────────────────────
   companyWebScraper: router({

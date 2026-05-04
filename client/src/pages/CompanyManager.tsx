@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import { WebsiteAnalyzerDialog } from "@/components/WebsiteAnalyzerDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -408,10 +409,25 @@ function CompanyForm({
 }
 
 export default function CompanyManager() {
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [formData, setFormData] = useState<CompanyFormData>(emptyFormData);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // tRPC queries and mutations
+  const { data: dbCompanies, isLoading: isLoadingCompanies, refetch } = trpc.company.list.useQuery();
+  const createMutation = trpc.company.create.useMutation();
+  const updateMutation = trpc.company.update.useMutation();
+  const deleteMutation = trpc.company.delete.useMutation();
+
+  // Load companies on mount
+  useEffect(() => {
+    if (dbCompanies) {
+      setCompanies(dbCompanies as Company[]);
+      setIsLoading(false);
+    }
+  }, [dbCompanies]);
 
   const handleAddCompany = () => {
     setEditingCompany(null);
@@ -436,61 +452,64 @@ export default function CompanyManager() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmitForm = (data: CompanyFormData) => {
+  const handleSubmitForm = async (data: CompanyFormData) => {
     if (!data.name.trim()) {
       alert("Company name is required");
       return;
     }
 
-    if (editingCompany) {
-      // Update existing company
-      setCompanies((prev) =>
-        prev.map((c) =>
-          c.id === editingCompany.id
-            ? {
-                ...c,
-                name: data.name,
-                industry: data.industry,
-                website: data.website,
-                description: data.description,
-                monthlyRevenue: data.monthlyRevenue ? parseFloat(data.monthlyRevenue) : undefined,
-                employeeCount: data.employeeCount ? parseInt(data.employeeCount) : undefined,
-                foundedYear: data.foundedYear ? parseInt(data.foundedYear) : undefined,
-                contactEmail: data.contactEmail,
-                contactPhone: data.contactPhone,
-                location: data.location,
-                updatedAt: new Date(),
-              }
-            : c
-        )
-      );
-    } else {
-      // Create new company
-      const newCompany: Company = {
-        id: `comp-${Date.now()}`,
-        name: data.name,
-        industry: data.industry,
-        website: data.website,
-        description: data.description,
-        monthlyRevenue: data.monthlyRevenue ? parseFloat(data.monthlyRevenue) : undefined,
-        employeeCount: data.employeeCount ? parseInt(data.employeeCount) : undefined,
-        foundedYear: data.foundedYear ? parseInt(data.foundedYear) : undefined,
-        contactEmail: data.contactEmail,
-        contactPhone: data.contactPhone,
-        location: data.location,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setCompanies((prev) => [newCompany, ...prev]);
-    }
+    try {
+      if (editingCompany) {
+        // Update existing company
+        await updateMutation.mutateAsync({
+          id: editingCompany.id,
+          name: data.name,
+          industry: data.industry,
+          website: data.website,
+          description: data.description,
+          monthlyRevenue: data.monthlyRevenue ? parseFloat(data.monthlyRevenue) : undefined,
+          employeeCount: data.employeeCount ? parseInt(data.employeeCount) : undefined,
+          foundedYear: data.foundedYear ? parseInt(data.foundedYear) : undefined,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          location: data.location,
+        });
+      } else {
+        // Create new company
+        await createMutation.mutateAsync({
+          name: data.name,
+          industry: data.industry,
+          website: data.website,
+          description: data.description,
+          monthlyRevenue: data.monthlyRevenue ? parseFloat(data.monthlyRevenue) : undefined,
+          employeeCount: data.employeeCount ? parseInt(data.employeeCount) : undefined,
+          foundedYear: data.foundedYear ? parseInt(data.foundedYear) : undefined,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          location: data.location,
+        });
+      }
 
-    setIsDialogOpen(false);
-    setEditingCompany(null);
-    setFormData(emptyFormData);
+      // Refetch companies to get updated list
+      await refetch();
+
+      setIsDialogOpen(false);
+      setEditingCompany(null);
+      setFormData(emptyFormData);
+    } catch (error) {
+      console.error("Error saving company:", error);
+      alert("Failed to save company. Please try again.");
+    }
   };
 
-  const handleDeleteCompany = (id: string) => {
-    setCompanies((prev) => prev.filter((c) => c.id !== id));
+  const handleDeleteCompany = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync({ id });
+      await refetch();
+    } catch (error) {
+      console.error("Error deleting company:", error);
+      alert("Failed to delete company. Please try again.");
+    }
   };
 
   const handleWebsiteDataExtracted = (extractedData: any) => {
