@@ -43,6 +43,13 @@
       "when": 1777815619850,
       "tag": "0005_swift_big_bertha",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1777867866364,
+      "tag": "0006_dazzling_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }

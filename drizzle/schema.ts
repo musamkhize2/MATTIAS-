@@ -499,3 +499,161 @@ export const companyMetrics = mysqlTable("company_metrics", {
 
 export type CompanyMetrics = typeof companyMetrics.$inferSelect;
 export type InsertCompanyMetrics = typeof companyMetrics.$inferInsert;
+
+
+// ─── Cognitive Field Engine (CFE) ─────────────────────────────────────────────
+
+// Identity Profile: Tenant personality and thinking style
+export const identityProfiles = mysqlTable("identity_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  tenantId: int("tenantId").notNull().unique(),
+  thinkingStyle: mysqlEnum("thinkingStyle", [
+    "strategic_balanced",
+    "creative_exploratory",
+    "analytical_rigorous",
+    "pragmatic_direct",
+  ])
+    .default("strategic_balanced")
+    .notNull(),
+  riskTolerance: float("riskTolerance").default(0.6), // 0-1 scale
+  creativityBias: float("creativityBias").default(0.5), // 0-1 scale
+  communicationStyle: mysqlEnum("communicationStyle", [
+    "direct_warm",
+    "formal_precise",
+    "casual_friendly",
+    "executive_concise",
+  ])
+    .default("direct_warm")
+    .notNull(),
+  decisionConfidenceProfile: mysqlEnum("decisionConfidenceProfile", [
+    "progressive",
+    "conservative",
+    "balanced",
+  ])
+    .default("balanced")
+    .notNull(),
+  metadata: json("metadata"), // Additional profile attributes
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type IdentityProfile = typeof identityProfiles.$inferSelect;
+export type InsertIdentityProfile = typeof identityProfiles.$inferInsert;
+
+// Cognitive Budgets: Per-tier resource allocation
+export const cognitiveBudgets = mysqlTable("cognitive_budgets", {
+  id: int("id").autoincrement().primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  subscriptionTier: mysqlEnum("subscriptionTier", ["personal", "professional", "enterprise"])
+    .notNull(),
+  maxThreads: int("maxThreads").default(2), // 1-6 threads
+  maxRounds: int("maxRounds").default(1), // debate rounds
+  maxTotalTokens: int("maxTotalTokens").default(4000), // LLM tokens
+  maxLatencyMs: int("maxLatencyMs").default(2000), // wall clock limit
+  deepCfeTriggersPerDay: int("deepCfeTriggersPerDay").default(10),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CognitiveBudget = typeof cognitiveBudgets.$inferSelect;
+export type InsertCognitiveBudget = typeof cognitiveBudgets.$inferInsert;
+
+// Cognitive Sessions: Track CFE executions
+export const cognitiveSessions = mysqlTable("cognitive_sessions", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  userId: int("userId").notNull(),
+  eventId: bigint("eventId", { mode: "number" }),
+  mode: mysqlEnum("mode", ["focus", "creative", "crisis", "exploratory"])
+    .default("focus")
+    .notNull(),
+  complexity: varchar("complexity", { length: 32 }).default("medium"), // low, medium, high
+  threadCount: int("threadCount").default(1),
+  roundCount: int("roundCount").default(1),
+  tokensUsed: int("tokensUsed").default(0),
+  confidence: float("confidence").default(0.5), // 0-1
+  finalOutput: json("finalOutput"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  status: mysqlEnum("status", ["pending", "running", "completed", "failed"])
+    .default("pending")
+    .notNull(),
+});
+
+export type CognitiveSession = typeof cognitiveSessions.$inferSelect;
+export type InsertCognitiveSession = typeof cognitiveSessions.$inferInsert;
+
+// Thought Nodes: Individual thread outputs
+export const thoughtNodes = mysqlTable("thought_nodes", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  sessionId: varchar("sessionId", { length: 64 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  threadType: mysqlEnum("threadType", [
+    "logical",
+    "intuitive",
+    "contrarian",
+    "memory",
+    "creative",
+    "ethical",
+  ])
+    .notNull(),
+  content: text("content").notNull(),
+  confidence: float("confidence").default(0.5),
+  relevance: float("relevance").default(0.5),
+  emotionalValence: varchar("emotionalValence", { length: 32 }),
+  suggestedActions: json("suggestedActions"),
+  challenges: json("challenges"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ThoughtNode = typeof thoughtNodes.$inferSelect;
+export type InsertThoughtNode = typeof thoughtNodes.$inferInsert;
+
+// Cognitive Memory: Summarized event embeddings
+export const cognitiveMemory = mysqlTable("cognitive_memory", {
+  id: int("id").autoincrement().primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  eventId: bigint("eventId", { mode: "number" }),
+  originalContent: text("originalContent"),
+  summarizedContent: text("summarizedContent"), // Reinterpreted version
+  embedding: json("embedding"), // Vector as JSON array
+  distortionScore: float("distortionScore").default(0), // How far from original
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CognitiveMemory = typeof cognitiveMemory.$inferSelect;
+export type InsertCognitiveMemory = typeof cognitiveMemory.$inferInsert;
+
+// Uncertainty Flags: Track low-confidence decisions
+export const uncertaintyFlags = mysqlTable("uncertainty_flags", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  sessionId: varchar("sessionId", { length: 64 }),
+  eventId: bigint("eventId", { mode: "number" }),
+  confidenceScore: float("confidenceScore").notNull(),
+  reason: text("reason"),
+  conflictingData: json("conflictingData"),
+  recommendedAction: varchar("recommendedAction", { length: 255 }),
+  humanReviewRequested: boolean("humanReviewRequested").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+});
+
+export type UncertaintyFlag = typeof uncertaintyFlags.$inferSelect;
+export type InsertUncertaintyFlag = typeof uncertaintyFlags.$inferInsert;
+
+// Daily Insights: Generated by daily living system
+export const dailyInsights = mysqlTable("daily_insights", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  insights: json("insights"), // Array of insight objects
+  identityUpdates: json("identityUpdates"), // Profile adjustments
+  memoryReindexed: int("memoryReindexed").default(0), // Count of updated memories
+  suggestedActions: json("suggestedActions"),
+});
+
+export type DailyInsight = typeof dailyInsights.$inferSelect;
+export type InsertDailyInsight = typeof dailyInsights.$inferInsert;
