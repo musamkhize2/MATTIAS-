@@ -512,20 +512,66 @@ export default function CompanyManager() {
     }
   };
 
-  const handleWebsiteDataExtracted = (extractedData: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      name: extractedData.name || prev.name,
-      industry: extractedData.industry || prev.industry,
-      website: extractedData.website || prev.website,
-      description: extractedData.description || prev.description,
-      monthlyRevenue: extractedData.monthlyRevenue?.toString() || prev.monthlyRevenue,
-      employeeCount: extractedData.employeeCount?.toString() || prev.employeeCount,
-      foundedYear: extractedData.foundedYear?.toString() || prev.foundedYear,
-      contactEmail: extractedData.contactEmail || prev.contactEmail,
-      contactPhone: extractedData.contactPhone || prev.contactPhone,
-      location: extractedData.location || prev.location,
-    }));
+  const handleWebsiteDataExtracted = async (extractedData: any) => {
+    if (!extractedData.name || !extractedData.name.trim()) {
+      alert("Unable to extract company name from website. Please enter it manually.");
+      // Still populate the form for manual editing
+      setFormData((prev) => ({
+        ...prev,
+        name: extractedData.name || prev.name,
+        industry: extractedData.industry || prev.industry,
+        website: extractedData.website || prev.website,
+        description: extractedData.description || prev.description,
+        monthlyRevenue: extractedData.monthlyRevenue?.toString() || prev.monthlyRevenue,
+        employeeCount: extractedData.employeeCount?.toString() || prev.employeeCount,
+        foundedYear: extractedData.foundedYear?.toString() || prev.foundedYear,
+        contactEmail: extractedData.contactEmail || prev.contactEmail,
+        contactPhone: extractedData.contactPhone || prev.contactPhone,
+        location: extractedData.location || prev.location,
+      }));
+      return;
+    }
+
+    try {
+      // Directly save the extracted company data to the database
+      await createMutation.mutateAsync({
+        name: extractedData.name,
+        industry: extractedData.industry || "",
+        website: extractedData.website || "",
+        description: extractedData.description || "",
+        monthlyRevenue: extractedData.monthlyRevenue ? parseFloat(extractedData.monthlyRevenue) : undefined,
+        employeeCount: extractedData.employeeCount ? parseInt(extractedData.employeeCount) : undefined,
+        foundedYear: extractedData.foundedYear ? parseInt(extractedData.foundedYear) : undefined,
+        contactEmail: extractedData.contactEmail || "",
+        contactPhone: extractedData.contactPhone || "",
+        location: extractedData.location || "",
+      });
+
+      // Refetch companies to show the newly added company
+      await refetch();
+
+      // Close the dialog and reset form
+      setIsDialogOpen(false);
+      setFormData(emptyFormData);
+      alert("Company successfully extracted and saved!");
+    } catch (error) {
+      console.error("Error saving extracted company data:", error);
+      alert("Failed to save company. Please try again.");
+      // Populate form for manual editing if auto-save fails
+      setFormData((prev) => ({
+        ...prev,
+        name: extractedData.name || prev.name,
+        industry: extractedData.industry || prev.industry,
+        website: extractedData.website || prev.website,
+        description: extractedData.description || prev.description,
+        monthlyRevenue: extractedData.monthlyRevenue?.toString() || prev.monthlyRevenue,
+        employeeCount: extractedData.employeeCount?.toString() || prev.employeeCount,
+        foundedYear: extractedData.foundedYear?.toString() || prev.foundedYear,
+        contactEmail: extractedData.contactEmail || prev.contactEmail,
+        contactPhone: extractedData.contactPhone || prev.contactPhone,
+        location: extractedData.location || prev.location,
+      }));
+    }
   };
 
   return (
