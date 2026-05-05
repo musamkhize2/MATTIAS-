@@ -28,6 +28,7 @@ import { scrapeCompanyWebsite, validateAndCleanCompanyData } from "./mattias/web
 import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattias/integrationRouters";
 import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
+import { actionRouter } from "./mattias/actionRouter";
 import {
   orchestrateEvent,
   runMATTIASCommand,
@@ -488,8 +489,10 @@ export const appRouter = router({
         agentActivity,
         recentEvents: recentEvents.slice(0, 10),
       };
-    }),
+     }),
   }),
-});
 
+  // ─── Actions ───────────────────────────────────────────────────────────────
+  actions: actionRouter,
+});
 export type AppRouter = typeof appRouter;
