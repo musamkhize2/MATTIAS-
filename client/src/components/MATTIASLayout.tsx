@@ -15,6 +15,7 @@ import {
   Key,
   Layers,
   LogOut,
+  Mail,
   MessageSquare,
   Monitor,
   BarChart3,
@@ -255,8 +256,9 @@ export default function MATTIASLayout({ children }: { children: ReactNode }) {
             <NavItem href="/crm-marketplace" icon={Zap} label="CRM Marketplace" active={location === "/crm-marketplace"} />
             <NavItem href="/workflows" icon={GitBranch} label="Workflow Builder" active={location === "/workflows"} />
             <NavItem href="/integration-health" icon={Monitor} label="Health Status" active={location === "/integration-health"} />
-            <NavItem href="/campaigns" icon={BarChart3} label="Campaigns" active={location === "/campaigns"} />
-            <NavItem href="/companies" icon={Building2} label="Companies" active={location === "/companies"} />
+            <NavItem href="/marketing-campaigns" icon={BarChart3} label="Campaigns" active={location === "/marketing-campaigns"} />
+            <NavItem href="/email-campaigns" icon={Mail} label="Email Campaigns" active={location === "/email-campaigns"} />
+            <NavItem href="/company-manager" icon={Building2} label="Companies" active={location === "/company-manager"} />
           </div>
         </nav>
 
