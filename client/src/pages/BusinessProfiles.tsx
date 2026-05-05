@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Edit2, Building2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Building2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
 export default function BusinessProfiles() {
   const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     legalName: "",
@@ -38,10 +39,17 @@ export default function BusinessProfiles() {
       toast.success("Business profile created");
       setFormData({ name: "", legalName: "", industry: "", websiteUrl: "", annualRevenueTarget: "" });
       setIsCreating(false);
+      setEditingId(null);
       refetch();
     } catch (error) {
       toast.error("Failed to create business profile");
     }
+  };
+
+  const handleCancel = () => {
+    setIsCreating(false);
+    setEditingId(null);
+    setFormData({ name: "", legalName: "", industry: "", websiteUrl: "", annualRevenueTarget: "" });
   };
 
   const handleDelete = async (profileId: string) => {
@@ -123,7 +131,7 @@ export default function BusinessProfiles() {
               <Button onClick={handleCreate} disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Creating..." : "Create Profile"}
               </Button>
-              <Button variant="outline" onClick={() => setIsCreating(false)}>
+              <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
             </div>
@@ -156,7 +164,22 @@ export default function BusinessProfiles() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="gap-1"
+                    onClick={() => {
+                      setEditingId(profile.id);
+                      setFormData({
+                        name: profile.name,
+                        legalName: profile.legalName || "",
+                        industry: profile.industry || "",
+                        websiteUrl: profile.websiteUrl || "",
+                        annualRevenueTarget: profile.annualRevenueTarget?.toString() || "",
+                      });
+                      setIsCreating(true);
+                    }}
+                  >
                     <Edit2 size={14} />
                     Edit
                   </Button>
