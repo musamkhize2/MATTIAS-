@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Send, Eye, Settings } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useToast } from "@/components/ui/use-toast";
 
 interface EmailTemplate {
   id: string;
@@ -108,7 +107,6 @@ const DEMO_CAMPAIGNS: Campaign[] = [
 ];
 
 export default function EmailCampaigns() {
-  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>(DEMO_CAMPAIGNS);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("cold_outreach");
   const [campaignName, setCampaignName] = useState<string>("");
