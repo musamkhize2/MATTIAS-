@@ -1,8 +1,8 @@
-import { getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
+import { sendEmailViaMailerLite } from "./mailerliteService";
 
 /**
- * Email service integration with SendGrid
+ * Email service integration with MailerLite
  * Handles email sending, templates, and campaign management
  */
 
@@ -79,40 +79,40 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
     subject: "Quick follow-up: {{companyName}}",
     htmlContent: `
       <h2>Hi {{firstName}},</h2>
-      <p>I wanted to follow up on my previous message about helping {{companyName}} with {{solution}}.</p>
-      <p>I know you're busy, but I think this could be valuable for your team. Here's a quick video showing how it works: {{videoLink}}</p>
-      <p>Let me know if you'd like to chat!</p>
-      <p>{{senderName}}</p>
+      <p>I wanted to follow up on my previous email about {{topic}}.</p>
+      <p>I believe there's a real opportunity for {{companyName}} to {{opportunity}}.</p>
+      <p>Would you have 15 minutes this week for a quick call?</p>
+      <p>Best regards,<br/>{{senderName}}</p>
     `,
-    textContent: `Hi {{firstName}},\n\nI wanted to follow up on my previous message about helping {{companyName}} with {{solution}}.\n\nI know you're busy, but I think this could be valuable for your team. Here's a quick video: {{videoLink}}\n\nLet me know if you'd like to chat!\n\n{{senderName}}`,
-    variables: ["firstName", "companyName", "solution", "videoLink", "senderName"],
+    textContent: `Hi {{firstName}},\n\nI wanted to follow up on my previous email about {{topic}}.\n\nI believe there's a real opportunity for {{companyName}} to {{opportunity}}.\n\nWould you have 15 minutes this week for a quick call?\n\nBest regards,\n{{senderName}}`,
+    variables: ["firstName", "companyName", "topic", "opportunity", "senderName"],
     category: "followup",
     createdAt: new Date(),
   },
   PROPOSAL: {
     id: "proposal",
-    name: "Proposal Email",
-    subject: "Proposal: {{projectName}} for {{companyName}}",
+    name: "Proposal",
+    subject: "Proposal: {{companyName}} - {{proposalTitle}}",
     htmlContent: `
       <h2>Hi {{firstName}},</h2>
-      <p>Thank you for the great conversation about {{projectName}}. As discussed, here's our proposal:</p>
-      <h3>Project Scope:</h3>
-      <p>{{projectScope}}</p>
-      <h3>Timeline:</h3>
-      <p>{{timeline}}</p>
-      <h3>Investment:</h3>
-      <p>{{investment}}</p>
-      <p>We're excited to work with {{companyName}} on this. Please review and let me know if you have any questions.</p>
-      <p>{{senderName}}</p>
+      <p>Following our conversation, I've prepared a proposal for {{companyName}} on {{proposalTitle}}.</p>
+      <p>Key highlights:</p>
+      <ul>
+        <li>{{highlight1}}</li>
+        <li>{{highlight2}}</li>
+        <li>{{highlight3}}</li>
+      </ul>
+      <p>Please review and let me know if you'd like to discuss further.</p>
+      <p>Best regards,<br/>{{senderName}}</p>
     `,
-    textContent: `Hi {{firstName}},\n\nThank you for the great conversation about {{projectName}}. As discussed, here's our proposal:\n\nProject Scope:\n{{projectScope}}\n\nTimeline:\n{{timeline}}\n\nInvestment:\n{{investment}}\n\nWe're excited to work with {{companyName}} on this. Please review and let me know if you have any questions.\n\n{{senderName}}`,
+    textContent: `Hi {{firstName}},\n\nFollowing our conversation, I've prepared a proposal for {{companyName}} on {{proposalTitle}}.\n\nKey highlights:\n- {{highlight1}}\n- {{highlight2}}\n- {{highlight3}}\n\nPlease review and let me know if you'd like to discuss further.\n\nBest regards,\n{{senderName}}`,
     variables: [
       "firstName",
-      "projectName",
       "companyName",
-      "projectScope",
-      "timeline",
-      "investment",
+      "proposalTitle",
+      "highlight1",
+      "highlight2",
+      "highlight3",
       "senderName",
     ],
     category: "proposal",
@@ -120,26 +120,22 @@ export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
   },
   NEWSLETTER: {
     id: "newsletter",
-    name: "Weekly Newsletter",
-    subject: "Weekly Insights: {{topic}}",
+    name: "Newsletter",
+    subject: "{{newsletterTitle}} - {{date}}",
     htmlContent: `
-      <h2>Hi {{firstName}},</h2>
-      <h3>This Week's Insights</h3>
+      <h2>{{newsletterTitle}}</h2>
       <p>{{content}}</p>
-      <h3>Action Item:</h3>
-      <p>{{actionItem}}</p>
-      <p>Questions? Reply to this email!</p>
-      <p>{{senderName}}</p>
+      <p>Best regards,<br/>{{senderName}}</p>
     `,
-    textContent: `Hi {{firstName}},\n\nThis Week's Insights\n{{content}}\n\nAction Item:\n{{actionItem}}\n\nQuestions? Reply to this email!\n\n{{senderName}}`,
-    variables: ["firstName", "topic", "content", "actionItem", "senderName"],
+    textContent: `{{newsletterTitle}}\n\n{{content}}\n\nBest regards,\n{{senderName}}`,
+    variables: ["newsletterTitle", "date", "content", "senderName"],
     category: "newsletter",
     createdAt: new Date(),
   },
 };
 
 /**
- * Send email via SendGrid
+ * Send email via MailerLite
  */
 export async function sendEmail(
   to: EmailRecipient,
@@ -150,14 +146,16 @@ export async function sendEmail(
   try {
     // Try to find template by ID - handle both uppercase and lowercase
     let template: EmailTemplate | undefined = EMAIL_TEMPLATES[templateId];
-    
+
     // Fallback: search by id field
     if (!template) {
-      template = Object.values(EMAIL_TEMPLATES).find(t => t.id === templateId);
+      template = Object.values(EMAIL_TEMPLATES).find((t) => t.id === templateId);
     }
-    
+
     if (!template) {
-      console.error(`[EMAIL] Template ${templateId} not found. Available: ${Object.keys(EMAIL_TEMPLATES).join(", ")}`);
+      console.error(
+        `[EMAIL] Template ${templateId} not found. Available: ${Object.keys(EMAIL_TEMPLATES).join(", ")}`
+      );
       return {
         success: false,
         error: `Template ${templateId} not found`,
@@ -168,41 +166,49 @@ export async function sendEmail(
     // Replace variables in subject and content
     let subject = template.subject;
     let htmlContent = template.htmlContent;
+    let textContent = template.textContent;
 
     for (const variable of template.variables) {
       const value = to.variables[variable] || "";
       subject = subject.replace(`{{${variable}}}`, value);
       htmlContent = htmlContent.replace(`{{${variable}}}`, value);
+      textContent = textContent.replace(`{{${variable}}}`, value);
     }
 
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    console.log(`[EMAIL] ✓ Email action executed`, {
-      to: to.email,
-      from: senderEmail,
+    // Send via MailerLite
+    const result = await sendEmailViaMailerLite({
+      to: [
+        {
+          email: to.email,
+          name: to.name,
+          fields: {
+            company: to.companyName || "",
+          },
+          tags: ["campaign", template.category],
+        },
+      ],
+      from: {
+        name: senderName,
+        email: senderEmail,
+      },
       subject,
-      templateId,
-      messageId,
-      status: "success",
+      html: htmlContent,
+      text: textContent,
+      replyTo: senderEmail,
+      tags: [template.category, "mattias"],
     });
 
-    // TODO: Integrate with SendGrid API
-    // const sgMail = require("@sendgrid/mail");
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    // await sgMail.send({
-    //   to: to.email,
-    //   from: senderEmail,
-    //   subject,
-    //   html: htmlContent,
-    //   text: template.textContent,
-    //   replyTo: senderEmail,
-    // });
+    if (result.success) {
+      console.log(`[EMAIL] ✓ Email sent successfully to ${to.email}`, {
+        messageId: result.messageId,
+        templateId,
+        subject,
+      });
+    } else {
+      console.error(`[EMAIL] Failed to send email to ${to.email}:`, result.error);
+    }
 
-    return {
-      success: true,
-      messageId,
-      timestamp: new Date(),
-    };
+    return result;
   } catch (error) {
     console.error("Error sending email:", error);
     return {
@@ -226,12 +232,22 @@ export async function sendBatchEmails(
   const results: EmailResult[] = [];
 
   for (let i = 0; i < recipients.length; i++) {
-    const result = await sendEmail(recipients[i], templateId, senderEmail, senderName);
-    results.push(result);
+    const recipient = recipients[i];
 
-    // Add delay between sends to avoid rate limiting
-    if (i < recipients.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    try {
+      const result = await sendEmail(recipient, templateId, senderEmail, senderName);
+      results.push(result);
+
+      // Add delay between sends to avoid rate limiting
+      if (i < recipients.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    } catch (error) {
+      results.push({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date(),
+      });
     }
   }
 
@@ -239,31 +255,23 @@ export async function sendBatchEmails(
 }
 
 /**
- * Generate personalized email content using LLM
+ * Generate email content using LLM
  */
-export async function generatePersonalizedEmail(
-  companyName: string,
-  industry: string,
-  recipientName: string,
-  context: string
-): Promise<{ subject: string; body: string }> {
+export async function generateEmailContent(
+  prompt: string,
+  context: Record<string, string>
+): Promise<{ subject: string; html: string; text: string }> {
   try {
     const response = await invokeLLM({
       messages: [
         {
           role: "system",
           content:
-            "You are an expert at writing personalized, professional business emails that get responses. Write compelling, concise emails that focus on value.",
+            "You are an expert email copywriter. Generate professional, engaging email content.",
         },
         {
           role: "user",
-          content: `Write a personalized outreach email for:
-- Company: ${companyName}
-- Industry: ${industry}
-- Recipient: ${recipientName}
-- Context: ${context}
-
-Respond with JSON: { "subject": "...", "body": "..." }`,
+          content: `${prompt}\n\nContext: ${JSON.stringify(context)}\n\nRespond with JSON: {"subject": "...", "html": "...", "text": "..."}`,
         },
       ],
       response_format: {
@@ -275,116 +283,29 @@ Respond with JSON: { "subject": "...", "body": "..." }`,
             type: "object",
             properties: {
               subject: { type: "string", description: "Email subject line" },
-              body: { type: "string", description: "Email body content" },
+              html: {
+                type: "string",
+                description: "HTML email content",
+              },
+              text: {
+                type: "string",
+                description: "Plain text email content",
+              },
             },
-            required: ["subject", "body"],
+            required: ["subject", "html", "text"],
             additionalProperties: false,
           },
         },
       },
     });
 
-    const messageContent = response.choices[0]?.message?.content;
-    if (!messageContent) {
-      throw new Error("No content in LLM response");
-    }
-
-    const content = typeof messageContent === "string" ? messageContent : JSON.stringify(messageContent);
-    const parsed = JSON.parse(content);
-    return {
-      subject: parsed.subject,
-      body: parsed.body,
-    };
+    const messageContent = response.choices[0].message.content;
+    const content = typeof messageContent === 'string' 
+      ? JSON.parse(messageContent)
+      : messageContent;
+    return content;
   } catch (error) {
-    console.error("Error generating personalized email:", error);
+    console.error("Error generating email content:", error);
     throw error;
   }
-}
-
-/**
- * Get email template by ID
- */
-export function getEmailTemplate(templateId: string): EmailTemplate | null {
-  return EMAIL_TEMPLATES[templateId] || null;
-}
-
-/**
- * Get all available templates
- */
-export function getAllEmailTemplates(): EmailTemplate[] {
-  return Object.values(EMAIL_TEMPLATES);
-}
-
-/**
- * Create custom email template
- */
-export function createCustomTemplate(
-  name: string,
-  subject: string,
-  htmlContent: string,
-  textContent: string,
-  category: EmailTemplate["category"]
-): EmailTemplate {
-  const variables = extractVariables(htmlContent);
-
-  return {
-    id: `custom_${Date.now()}`,
-    name,
-    subject,
-    htmlContent,
-    textContent,
-    variables,
-    category,
-    createdAt: new Date(),
-  };
-}
-
-/**
- * Extract template variables from content
- */
-function extractVariables(content: string): string[] {
-  const regex = /\{\{(\w+)\}\}/g;
-  const variables: string[] = [];
-  let match;
-
-  while ((match = regex.exec(content)) !== null) {
-    if (!variables.includes(match[1])) {
-      variables.push(match[1]);
-    }
-  }
-
-  return variables;
-}
-
-/**
- * Validate email recipient data
- */
-export function validateRecipient(recipient: EmailRecipient, templateId: string): boolean {
-  const template = EMAIL_TEMPLATES[templateId];
-  if (!template) return false;
-
-  // Check if all required variables are provided
-  for (const variable of template.variables) {
-    if (!recipient.variables[variable]) {
-      console.warn(`Missing variable: ${variable} for recipient ${recipient.email}`);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Format email statistics
- */
-export function formatEmailStats(campaign: EmailCampaign): string {
-  const deliveryRate = ((campaign.sentCount / campaign.recipientCount) * 100).toFixed(1);
-  return `
-Campaign: ${campaign.name}
-Status: ${campaign.status}
-Recipients: ${campaign.recipientCount}
-Sent: ${campaign.sentCount} (${deliveryRate}%)
-Open Rate: ${campaign.openRate.toFixed(1)}%
-Click Rate: ${campaign.clickRate.toFixed(1)}%
-  `.trim();
 }

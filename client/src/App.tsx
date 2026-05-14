@@ -26,6 +26,7 @@ import IntegrationHealth from "./pages/IntegrationHealth";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
 import CompanyManager from "./pages/CompanyManager";
 import EmailCampaigns from "./pages/EmailCampaigns";
+import CampaignAnalytics from "./pages/CampaignAnalytics";
 
 function Router() {
   return (
@@ -52,6 +53,7 @@ function Router() {
         <Route path="/marketing-campaigns" component={MarketingCampaigns} />
         <Route path="/company-manager" component={CompanyManager} />
         <Route path="/email-campaigns" component={EmailCampaigns} />
+        <Route path="/campaign-analytics" component={CampaignAnalytics} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

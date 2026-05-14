@@ -29,6 +29,7 @@ import { dataSourcesRouter, crmConnectorsRouter, webhooksRouter } from "./mattia
 import { webhookReplayRouter, approvalReasoningRouter, crmOAuthRouter } from "./mattias/recommendationRouters";
 import { workflowsRouter } from "./mattias/workflowRouters";
 import { actionRouter } from "./mattias/actionRouter";
+import { analyticsRouter } from "./mattias/analyticsRouter";
 import {
   orchestrateEvent,
   runMATTIASCommand,
@@ -494,5 +495,7 @@ export const appRouter = router({
 
   // ─── Actions ───────────────────────────────────────────────────────────────
   actions: actionRouter,
+  // ─── Analytics ────────────────────────────────────────────────────────────────
+  analytics: analyticsRouter,
 });
 export type AppRouter = typeof appRouter;
