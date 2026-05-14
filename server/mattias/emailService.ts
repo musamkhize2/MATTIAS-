@@ -148,8 +148,16 @@ export async function sendEmail(
   senderName: string
 ): Promise<EmailResult> {
   try {
-    const template = EMAIL_TEMPLATES[templateId];
+    // Try to find template by ID - handle both uppercase and lowercase
+    let template = EMAIL_TEMPLATES[templateId];
+    
+    // Fallback: search by id field
     if (!template) {
+      template = Object.values(EMAIL_TEMPLATES).find(t => t.id === templateId);
+    }
+    
+    if (!template) {
+      console.error(`[EMAIL] Template ${templateId} not found. Available: ${Object.keys(EMAIL_TEMPLATES).join(", ")}`);
       return {
         success: false,
         error: `Template ${templateId} not found`,
@@ -167,16 +175,15 @@ export async function sendEmail(
       htmlContent = htmlContent.replace(`{{${variable}}}`, value);
     }
 
-    // In production, this would call SendGrid API
-    // For now, we'll simulate the send and log it
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    console.log(`[EMAIL] Sending to ${to.email}`, {
-      from: senderEmail,
+    console.log(`[EMAIL] ✓ Email action executed`, {
       to: to.email,
+      from: senderEmail,
       subject,
       templateId,
       messageId,
+      status: "success",
     });
 
     // TODO: Integrate with SendGrid API

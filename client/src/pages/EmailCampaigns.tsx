@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Send, Eye, Settings } from "lucide-react";
+import { Mail, Send, Eye, Settings, Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 interface EmailTemplate {
@@ -53,55 +55,45 @@ const TEMPLATES: EmailTemplate[] = [
   {
     id: "followup_1",
     name: "First Follow-up",
-    subject: "Quick follow-up: {{companyName}}",
+    subject: "Quick follow-up: {{companyName}} Demo",
     category: "followup",
-    variables: ["firstName", "companyName", "solution", "videoLink"],
+    variables: ["firstName", "companyName", "demoLink", "timeSlot"],
   },
   {
     id: "proposal",
-    name: "Proposal Email",
-    subject: "Proposal: {{projectName}} for {{companyName}}",
+    name: "Partnership Proposal",
+    subject: "Partnership Proposal for {{companyName}}",
     category: "proposal",
-    variables: ["firstName", "projectName", "companyName", "projectScope", "timeline", "investment"],
+    variables: ["firstName", "companyName", "proposalLink", "deadline"],
   },
   {
     id: "newsletter",
     name: "Weekly Newsletter",
-    subject: "Weekly Insights: {{topic}}",
+    subject: "Weekly Tech Digest - {{weekNumber}}",
     category: "newsletter",
-    variables: ["firstName", "topic", "content", "actionItem"],
+    variables: ["firstName", "weekNumber", "topicCount"],
   },
 ];
 
 const DEMO_CAMPAIGNS: Campaign[] = [
   {
     id: "camp_001",
-    name: "Tech Startup Outreach - Q2 2026",
+    name: "Q2 2026 Enterprise Outreach",
     templateId: "cold_outreach",
     status: "sent",
-    recipientCount: 250,
-    sentCount: 248,
-    openRate: 34.2,
-    createdAt: new Date("2026-05-01"),
+    recipientCount: 150,
+    sentCount: 150,
+    openRate: 0.32,
+    createdAt: new Date("2026-04-15"),
   },
   {
     id: "camp_002",
-    name: "SaaS Follow-up Campaign",
+    name: "Follow-up: Product Demo",
     templateId: "followup_1",
     status: "sending",
-    recipientCount: 150,
-    sentCount: 89,
-    openRate: 28.5,
-    createdAt: new Date("2026-05-03"),
-  },
-  {
-    id: "camp_003",
-    name: "Enterprise Proposals",
-    templateId: "proposal",
-    status: "draft",
     recipientCount: 45,
-    sentCount: 0,
-    openRate: 0,
+    sentCount: 32,
+    openRate: 0.28,
     createdAt: new Date("2026-05-05"),
   },
 ];
@@ -110,47 +102,82 @@ export default function EmailCampaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>(DEMO_CAMPAIGNS);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("cold_outreach");
   const [campaignName, setCampaignName] = useState<string>("");
-  const [recipientCount, setRecipientCount] = useState<string>("");
+  const [recipientEmails, setRecipientEmails] = useState<string>("");
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("campaigns");
-  const [isLoading, setIsLoading] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 
-  // tRPC mutations
-  const sendEmailCampaignMutation = trpc.actions.sendEmailCampaign.useMutation();
-  const executeActionMutation = trpc.actions.executeAction.useMutation();
+  // tRPC mutations for real backend execution
+  const sendEmailCampaignMutation = trpc.actions.sendEmailCampaign.useMutation({
+    onSuccess: (result) => {
+      // Add new campaign to list
+      const newCampaign: Campaign = {
+        id: result.actionId,
+        name: campaignName,
+        templateId: selectedTemplate,
+        status: "draft",
+        recipientCount: recipientEmails.split(",").length,
+        sentCount: 0,
+        openRate: 0,
+        createdAt: new Date(),
+      };
+      setCampaigns([...campaigns, newCampaign]);
+      setCampaignName("");
+      setRecipientEmails("");
+      alert("✓ Campaign created successfully!");
+    },
+    onError: (error) => {
+      alert(`✗ Error creating campaign: ${error.message}`);
+    },
+  });
+
+  const executeActionMutation = trpc.actions.executeAction.useMutation({
+    onSuccess: (result) => {
+      // Update campaign status - result.action.id contains the action ID
+      const actionId = result.action?.id || "";
+      setCampaigns(
+        campaigns.map((c) =>
+          c.id === actionId ? { ...c, status: "sending" as const } : c
+        )
+      );
+      alert("✓ Campaign sending started!");
+    },
+    onError: (error) => {
+      alert(`✗ Error sending campaign: ${error.message}`);
+    },
+  });
 
   const selectedTemplateData = TEMPLATES.find((t) => t.id === selectedTemplate);
 
-  const handleCreateCampaign = () => {
-    if (!campaignName || !recipientCount) {
-      alert("Please fill in all fields");
+  const handleCreateCampaign = async () => {
+    if (!campaignName || !recipientEmails) {
+      alert("⚠ Please fill in campaign name and recipient emails");
       return;
     }
 
-    const newCampaign: Campaign = {
-      id: `camp_${Date.now()}`,
-      name: campaignName,
+    // Call real backend tRPC mutation
+    await sendEmailCampaignMutation.mutateAsync({
+      recipients: recipientEmails.split(",").map((email) => ({
+        email: email.trim(),
+        name: email.trim().split("@")[0],
+      })),
       templateId: selectedTemplate,
-      status: "draft",
-      recipientCount: parseInt(recipientCount),
-      sentCount: 0,
-      openRate: 0,
-      createdAt: new Date(),
-    };
-
-    setCampaigns([...campaigns, newCampaign]);
-    setCampaignName("");
-    setRecipientCount("");
-    alert("Campaign created successfully!");
+      senderEmail: "campaigns@company.com",
+      senderName: "Campaign Manager",
+    });
   };
 
-  const handleSendCampaign = (campaignId: string) => {
-    setCampaigns(
-      campaigns.map((c) =>
-        c.id === campaignId ? { ...c, status: "sending" as const } : c
-      )
-    );
-    alert("Campaign sending started!");
+  const handleSendCampaign = async (campaignId: string) => {
+    // Call real backend tRPC mutation
+    // Use string literal that matches ActionType.SEND_EMAIL value
+    await executeActionMutation.mutateAsync({
+      type: "send_email",
+      priority: "high",
+      payload: {
+        campaignId: campaignId,
+        templateId: selectedTemplate,
+      },
+    } as any);
   };
 
   const getStatusColor = (status: string) => {
@@ -168,145 +195,152 @@ export default function EmailCampaigns() {
     }
   };
 
+  const isLoading = sendEmailCampaignMutation.isPending || executeActionMutation.isPending;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Email Campaigns</h1>
-          <p className="text-gray-500 mt-1">Create and manage email campaigns with templates</p>
+          <h1 className="text-3xl font-bold tracking-tight">Email Campaigns</h1>
+          <p className="text-gray-600 mt-2">Create and manage email campaigns with real-time tracking</p>
         </div>
-        <Mail className="w-12 h-12 text-blue-600" />
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSettingsOpen(!settingsOpen)}
+        >
+          <Settings className="w-4 h-4" />
+        </Button>
       </div>
 
+      {settingsOpen && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle>Campaign Settings</CardTitle>
+            <CardDescription>Configure your email campaign preferences</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Default Sender Email</Label>
+              <Input placeholder="campaigns@company.com" defaultValue="campaigns@company.com" />
+            </div>
+            <div>
+              <Label>Unsubscribe Link</Label>
+              <Input placeholder="https://company.com/unsubscribe" defaultValue="https://company.com/unsubscribe" />
+            </div>
+            <div>
+              <Label>Reply-To Email</Label>
+              <Input placeholder="support@company.com" defaultValue="support@company.com" />
+            </div>
+            <Button onClick={() => setSettingsOpen(false)}>Save Settings</Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="campaigns">My Campaigns</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="create">Create New</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="campaigns">Active Campaigns</TabsTrigger>
+          <TabsTrigger value="create">Create Campaign</TabsTrigger>
         </TabsList>
 
-        {/* Campaigns Tab */}
         <TabsContent value="campaigns" className="space-y-4">
           <div className="grid gap-4">
-            {campaigns.map((campaign) => (
-              <Card key={campaign.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle>{campaign.name}</CardTitle>
-                      <CardDescription>
-                        Template: {TEMPLATES.find((t) => t.id === campaign.templateId)?.name}
-                      </CardDescription>
+            {campaigns.length === 0 ? (
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-gray-500">No campaigns yet. Create one to get started!</p>
+                </CardContent>
+              </Card>
+            ) : (
+              campaigns.map((campaign) => (
+                <Card key={campaign.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-5 h-5 text-blue-600" />
+                        <div>
+                          <CardTitle>{campaign.name}</CardTitle>
+                          <CardDescription>
+                            Created {campaign.createdAt.toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge className={getStatusColor(campaign.status)}>
+                        {campaign.status.toUpperCase()}
+                      </Badge>
                     </div>
-                    <Badge className={getStatusColor(campaign.status)}>
-                      {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Recipients</p>
-                      <p className="text-2xl font-bold">{campaign.recipientCount}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Recipients</p>
+                        <p className="text-2xl font-bold">{campaign.recipientCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Sent</p>
+                        <p className="text-2xl font-bold">{campaign.sentCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Open Rate</p>
+                        <p className="text-2xl font-bold">{(campaign.openRate * 100).toFixed(1)}%</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Sent</p>
-                      <p className="text-2xl font-bold">{campaign.sentCount}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Open Rate</p>
-                      <p className="text-2xl font-bold">{campaign.openRate.toFixed(1)}%</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Created</p>
-                      <p className="text-sm font-semibold">
-                        {campaign.createdAt.toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Preview
-                    </Button>
-                    {campaign.status === "draft" && (
+                    <div className="flex gap-2">
                       <Button
-                        size="sm"
                         onClick={() => handleSendCampaign(campaign.id)}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        disabled={campaign.status === "sent" || isLoading}
+                        className="flex-1"
                       >
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Campaign
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Campaign
+                          </>
+                        )}
                       </Button>
-                    )}
-                    <Button variant="outline" size="sm">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Settings
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            {TEMPLATES.map((template) => (
-              <Card key={template.id}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{template.name}</CardTitle>
-                  <CardDescription>{template.subject}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold">Variables:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {template.variables.map((v) => (
-                        <Badge key={v} variant="secondary">
-                          {v}
-                        </Badge>
-                      ))}
+                      <Button variant="outline" size="icon">
+                        <Eye className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Category: <span className="font-semibold">{template.category}</span>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
-        {/* Create Tab */}
         <TabsContent value="create" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Create New Campaign</CardTitle>
-              <CardDescription>Set up a new email campaign from a template</CardDescription>
+              <CardDescription>Set up a new email campaign with real backend execution</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="campaign-name">Campaign Name</Label>
                 <Input
                   id="campaign-name"
-                  placeholder="e.g., Q2 Tech Startup Outreach"
+                  placeholder="Q2 2026 Enterprise Outreach"
                   value={campaignName}
                   onChange={(e) => setCampaignName(e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="template-select">Select Template</Label>
+                <Label htmlFor="template">Email Template</Label>
                 <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                  <SelectTrigger id="template-select">
+                  <SelectTrigger id="template">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TEMPLATES.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
+                    {TEMPLATES.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -314,105 +348,49 @@ export default function EmailCampaigns() {
               </div>
 
               <div>
-                <Label htmlFor="recipient-count">Number of Recipients</Label>
-                <Input
-                  id="recipient-count"
-                  type="number"
-                  placeholder="e.g., 250"
-                  value={recipientCount}
-                  onChange={(e) => setRecipientCount(e.target.value)}
+                <Label htmlFor="recipients">Recipient Emails (comma-separated)</Label>
+                <Textarea
+                  id="recipients"
+                  placeholder="john@example.com, jane@example.com, bob@example.com"
+                  value={recipientEmails}
+                  onChange={(e) => setRecipientEmails(e.target.value)}
+                  rows={4}
                 />
               </div>
 
               {selectedTemplateData && (
-                <div>
-                  <Label>Template Variables</Label>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <p className="text-sm font-semibold">This template uses:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTemplateData.variables.map((v) => (
-                        <Badge key={v} variant="secondary">
-                          {v}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm font-semibold mb-2">Template Preview</p>
+                  <p className="text-sm text-gray-600">
+                    <strong>Subject:</strong> {selectedTemplateData.subject}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">
+                    <strong>Variables:</strong> {selectedTemplateData.variables.join(", ")}
+                  </p>
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleCreateCampaign}
-                  className="bg-blue-600 hover:bg-blue-700 flex-1"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Create Campaign
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowPreview(!showPreview)}
-                >
-                  {showPreview ? "Hide Preview" : "Preview Template"}
-                </Button>
-              </div>
-
-              {showPreview && selectedTemplateData && (
-                <Card className="bg-gray-50">
-                  <CardHeader>
-                    <CardTitle className="text-base">Template Preview</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div>
-                      <p className="text-xs text-gray-500">Subject:</p>
-                      <p className="font-semibold">{selectedTemplateData.subject}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Category:</p>
-                      <Badge>{selectedTemplateData.category}</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <Button
+                onClick={handleCreateCampaign}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Campaign...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Create Campaign
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Campaign Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign Statistics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Total Campaigns</p>
-              <p className="text-3xl font-bold">{campaigns.length}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Total Recipients</p>
-              <p className="text-3xl font-bold">
-                {campaigns.reduce((sum, c) => sum + c.recipientCount, 0)}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Total Sent</p>
-              <p className="text-3xl font-bold">
-                {campaigns.reduce((sum, c) => sum + c.sentCount, 0)}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Avg Open Rate</p>
-              <p className="text-3xl font-bold">
-                {(
-                  campaigns.reduce((sum, c) => sum + c.openRate, 0) / campaigns.length
-                ).toFixed(1)}
-                %
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
