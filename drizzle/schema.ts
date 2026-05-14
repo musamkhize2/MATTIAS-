@@ -657,3 +657,63 @@ export const dailyInsights = mysqlTable("daily_insights", {
 
 export type DailyInsight = typeof dailyInsights.$inferSelect;
 export type InsertDailyInsight = typeof dailyInsights.$inferInsert;
+
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+export const actions = mysqlTable("actions", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  userId: int("userId").notNull(),
+  type: varchar("type", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["pending", "executing", "completed", "failed"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  payload: json("payload").notNull(),
+  result: json("result"),
+  error: text("error"),
+  retryCount: int("retryCount").default(0).notNull(),
+  maxRetries: int("maxRetries").default(3).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  executedAt: timestamp("executedAt"),
+  completedAt: timestamp("completedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Action = typeof actions.$inferSelect;
+export type InsertAction = typeof actions.$inferInsert;
+
+// ─── Email Campaigns ──────────────────────────────────────────────────────────
+export const emailCampaigns = mysqlTable("emailCampaigns", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  templateId: varchar("templateId", { length: 64 }).notNull(),
+  status: mysqlEnum("status", ["draft", "scheduled", "sending", "sent"]).default("draft").notNull(),
+  recipientCount: int("recipientCount").default(0).notNull(),
+  sentCount: int("sentCount").default(0).notNull(),
+  openCount: int("openCount").default(0).notNull(),
+  clickCount: int("clickCount").default(0).notNull(),
+  recipients: json("recipients").notNull(),
+  actionId: varchar("actionId", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  scheduledAt: timestamp("scheduledAt"),
+  sentAt: timestamp("sentAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
+
+// ─── Action History ───────────────────────────────────────────────────────────
+export const actionHistory = mysqlTable("actionHistory", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  actionId: varchar("actionId", { length: 64 }).notNull(),
+  tenantId: int("tenantId").notNull(),
+  status: varchar("status", { length: 64 }).notNull(),
+  message: text("message"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ActionHistoryEntry = typeof actionHistory.$inferSelect;
+export type InsertActionHistoryEntry = typeof actionHistory.$inferInsert;

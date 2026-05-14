@@ -2,9 +2,12 @@ import { and, desc, eq, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
+  actions,
+  actionHistory,
   agentConfigs,
   approvals,
   commandHistory,
+  emailCampaigns,
   entities,
   events,
   featureFlags,
