@@ -149,7 +149,7 @@ export async function sendEmail(
 ): Promise<EmailResult> {
   try {
     // Try to find template by ID - handle both uppercase and lowercase
-    let template = EMAIL_TEMPLATES[templateId];
+    let template: EmailTemplate | undefined = EMAIL_TEMPLATES[templateId];
     
     // Fallback: search by id field
     if (!template) {
