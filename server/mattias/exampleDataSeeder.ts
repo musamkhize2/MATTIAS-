@@ -174,11 +174,41 @@ export const SAMPLE_WORKFLOWS = [
 /**
  * Seed example data into database
  */
-export async function seedExampleData(options: SeedOptions): Promise<void> {
+export async function seedExampleData(
+  options: SeedOptions
+): Promise<{ companies: number; campaigns: number; workflows: number }> {
   const { tenantId, userId, verbose = false } = options;
 
   try {
     if (verbose) console.log("[Seeder] Starting example data seeding...");
+
+    let companiesCount = 0;
+    let campaignsCount = 0;
+    let workflowsCount = 0;
+
+    // Seed sample companies (stored as trigger_workflow actions)
+    for (const company of SAMPLE_COMPANIES) {
+      if (verbose) console.log(`[Seeder] Creating company: ${company.name}`);
+
+      const action = await createAction(
+        tenantId,
+        userId,
+        "trigger_workflow",
+        "medium",
+        {
+          workflowType: "company_profile",
+          company: company,
+        }
+      );
+
+      await addActionHistory(
+        action.id,
+        "pending",
+        `Company profile created for ${company.name} (${company.industry})`
+      );
+
+      companiesCount++;
+    }
 
     // Seed email campaigns
     for (const campaign of SAMPLE_CAMPAIGNS) {
@@ -214,9 +244,44 @@ export async function seedExampleData(options: SeedOptions): Promise<void> {
         "pending",
         `Campaign "${campaign.name}" created with ${campaign.recipients.length} recipients`
       );
+
+      campaignsCount++;
     }
 
-    if (verbose) console.log("[Seeder] Example data seeding completed successfully");
+    // Seed sample workflows
+    for (const workflow of SAMPLE_WORKFLOWS) {
+      if (verbose) console.log(`[Seeder] Creating workflow: ${workflow.name}`);
+
+      const action = await createAction(
+        tenantId,
+        userId,
+        "trigger_workflow",
+        "medium",
+        {
+          workflowId: workflow.id,
+          workflowName: workflow.name,
+          description: workflow.description,
+          steps: workflow.steps,
+        }
+      );
+
+      await addActionHistory(
+        action.id,
+        "pending",
+        `Workflow "${workflow.name}" created with ${workflow.steps.length} steps`
+      );
+
+      workflowsCount++;
+    }
+
+    if (verbose) {
+      console.log(`[Seeder] Example data seeding completed successfully`);
+      console.log(
+        `[Seeder] Created: ${companiesCount} companies, ${campaignsCount} campaigns, ${workflowsCount} workflows`
+      );
+    }
+
+    return { companies: companiesCount, campaigns: campaignsCount, workflows: workflowsCount };
   } catch (error) {
     console.error("[Seeder] Error seeding data:", error);
     throw error;
