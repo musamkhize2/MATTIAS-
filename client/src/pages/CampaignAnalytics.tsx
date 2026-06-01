@@ -1,29 +1,62 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Download, RefreshCw } from "lucide-react";
 
 export default function CampaignAnalytics() {
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get all campaigns with metrics
-  const { data: campaignsData, isLoading: campaignsLoading } =
+  const { data: campaignsData, isLoading: campaignsLoading, refetch: refetchCampaigns } =
     trpc.analytics.getAllCampaignsMetrics.useQuery({ limit: 50 });
 
   // Get selected campaign metrics
-  const { data: metricsData, isLoading: metricsLoading } =
+  const { data: metricsData, isLoading: metricsLoading, refetch: refetchMetrics } =
     trpc.analytics.getCampaignMetrics.useQuery(
       { campaignId: selectedCampaignId || "" },
       { enabled: !!selectedCampaignId }
     );
 
   // Get engagement timeline
-  const { data: timelineData, isLoading: timelineLoading } =
+  const { data: timelineData, isLoading: timelineLoading, refetch: refetchTimeline } =
     trpc.analytics.getEngagementTimeline.useQuery(
       { campaignId: selectedCampaignId || "" },
       { enabled: !!selectedCampaignId }
     );
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      refetchCampaigns();
+      if (selectedCampaignId) {
+        refetchMetrics();
+        refetchTimeline();
+      }
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, selectedCampaignId, refetchCampaigns, refetchMetrics, refetchTimeline]);
 
   const campaigns = campaignsData?.campaigns || [];
   const metrics = metricsData?.metrics;
@@ -55,15 +88,139 @@ export default function CampaignAnalytics() {
 
   const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6"];
 
+  // Export functions
+  const exportToCSV = async () => {
+    setIsExporting(true);
+    try {
+      const headers = ["Campaign Name", "Sent", "Open Rate", "Click Rate"];
+      const rows = campaigns.map((c) => [
+        c.name,
+        c.sentCount,
+        c.openRate.toFixed(2) + "%",
+        c.clickRate.toFixed(2) + "%",
+      ]);
+
+      const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `campaign-analytics-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportToJSON = async () => {
+    setIsExporting(true);
+    try {
+      const data = {
+        exportDate: new Date().toISOString(),
+        summary: avgMetrics,
+        campaigns,
+        timeline,
+      };
+
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `campaign-analytics-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleManualRefresh = () => {
+    refetchCampaigns();
+    if (selectedCampaignId) {
+      refetchMetrics();
+      refetchTimeline();
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Campaign Analytics</h1>
-        <p className="text-muted-foreground mt-2">
-          Track email campaign performance and engagement metrics
-        </p>
+      {/* Header with Controls */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Campaign Analytics</h1>
+          <p className="text-muted-foreground mt-2">
+            Track email campaign performance and engagement metrics
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={campaignsLoading}
+            className="gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToCSV}
+            disabled={!campaigns.length || isExporting}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToJSON}
+            disabled={!campaigns.length || isExporting}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            JSON
+          </Button>
+        </div>
       </div>
+
+      {/* Auto-Refresh Settings */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Auto-Refresh Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300"
+            />
+            <span className="text-sm">Enable auto-refresh</span>
+          </label>
+          <select
+            value={refreshInterval}
+            onChange={(e) => setRefreshInterval(Number(e.target.value))}
+            disabled={!autoRefresh}
+            className="text-sm px-2 py-1 border rounded"
+          >
+            <option value={10000}>Every 10 seconds</option>
+            <option value={30000}>Every 30 seconds</option>
+            <option value={60000}>Every 1 minute</option>
+            <option value={300000}>Every 5 minutes</option>
+          </select>
+          {autoRefresh && (
+            <span className="text-xs text-muted-foreground ml-auto">
+              Auto-refresh enabled
+            </span>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -108,158 +265,149 @@ export default function CampaignAnalytics() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Campaign List */}
-        <Card className="lg:col-span-1">
+      {/* Campaign Distribution */}
+      {pieData.length > 0 && (
+        <Card>
           <CardHeader>
-            <CardTitle>Campaigns</CardTitle>
-            <CardDescription>Select a campaign to view details</CardDescription>
+            <CardTitle>Top Campaigns by Volume</CardTitle>
+            <CardDescription>Email distribution across top 5 campaigns</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {campaignsLoading ? (
-                <div className="text-center text-muted-foreground">Loading...</div>
-              ) : campaigns.length === 0 ? (
-                <div className="text-center text-muted-foreground">No campaigns yet</div>
-              ) : (
-                campaigns.map((campaign) => (
-                  <Button
-                    key={campaign.id}
-                    variant={selectedCampaignId === campaign.id ? "default" : "outline"}
-                    className="w-full justify-start text-left"
-                    onClick={() => setSelectedCampaignId(campaign.id)}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{campaign.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {campaign.sentCount} sent • {campaign.openRate.toFixed(1)}% open
-                      </div>
-                    </div>
-                  </Button>
-                ))
-              )}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
+      )}
 
-        {/* Charts */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Top Campaigns by Volume */}
-          <Card>
+      {/* Campaign List and Details */}
+      {campaigns.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Campaign List */}
+          <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Top Campaigns by Volume</CardTitle>
-              <CardDescription>Email sent distribution</CardDescription>
+              <CardTitle>Campaigns</CardTitle>
+              <CardDescription>{campaigns.length} total campaigns</CardDescription>
             </CardHeader>
             <CardContent>
-              {campaigns.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: ${value}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {COLORS.map((color, index) => (
-                        <Cell key={`cell-${index}`} fill={color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="text-center text-muted-foreground py-8">No data available</div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Campaign Comparison */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-              <CardDescription>Open and click rates comparison</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {campaigns.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={campaigns.slice(0, 10)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="openRate" fill="#3b82f6" name="Open Rate %" />
-                    <Bar dataKey="clickRate" fill="#10b981" name="Click Rate %" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="text-center text-muted-foreground py-8">No data available</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Selected Campaign Details */}
-      {selectedCampaignId && metrics && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>{metrics.campaignName}</CardTitle>
-              <CardDescription>Detailed metrics and performance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Sent</div>
-                  <div className="text-2xl font-bold">{metrics.sentCount}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Opened</div>
-                  <div className="text-2xl font-bold">{metrics.openCount}</div>
-                  <div className="text-xs text-muted-foreground">{metrics.openRate}%</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Clicked</div>
-                  <div className="text-2xl font-bold">{metrics.clickCount}</div>
-                  <div className="text-xs text-muted-foreground">{metrics.clickRate}%</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Bounced</div>
-                  <div className="text-2xl font-bold">{metrics.bounceCount}</div>
-                  <div className="text-xs text-muted-foreground">{metrics.bounceRate}%</div>
-                </div>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {campaigns.map((campaign) => (
+                  <button
+                    key={campaign.id}
+                    onClick={() => setSelectedCampaignId(campaign.id)}
+                    className={`w-full text-left p-3 rounded border transition-colors ${
+                      selectedCampaignId === campaign.id
+                        ? "bg-blue-50 border-blue-300"
+                        : "hover:bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <div className="font-medium text-sm truncate">{campaign.name}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {campaign.sentCount} sent
+                    </div>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Engagement Timeline */}
-          {timeline.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Engagement Timeline</CardTitle>
-                <CardDescription>Opens and clicks over time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={timeline}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="opens" stroke="#3b82f6" name="Opens" />
-                    <Line type="monotone" dataKey="clicks" stroke="#10b981" name="Clicks" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {/* Campaign Details */}
+          {selectedCampaignId && metrics && (
+            <div className="lg:col-span-2 space-y-4">
+              {/* Metrics Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Open Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.openRate.toFixed(1)}%</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Click Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.clickRate.toFixed(1)}%</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Bounce Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.bounceRate.toFixed(1)}%</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Sent</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{metrics.sentCount}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Engagement Timeline */}
+              {timeline.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Engagement Timeline</CardTitle>
+                    <CardDescription>Opens and clicks over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={timeline}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="opens" stroke="#3b82f6" name="Opens" />
+                        <Line type="monotone" dataKey="clicks" stroke="#10b981" name="Clicks" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </div>
+      )}
+
+      {/* Empty State */}
+      {campaigns.length === 0 && !campaignsLoading && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No campaigns found</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Create your first email campaign to see analytics
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

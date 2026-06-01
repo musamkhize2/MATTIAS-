@@ -717,3 +717,53 @@ export const actionHistory = mysqlTable("actionHistory", {
 
 export type ActionHistoryEntry = typeof actionHistory.$inferSelect;
 export type InsertActionHistoryEntry = typeof actionHistory.$inferInsert;
+
+// ─── Email Delivery Status ────────────────────────────────────────────────────
+export const emailDeliveryStatus = mysqlTable("emailDeliveryStatus", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  campaignId: varchar("campaignId", { length: 64 }).notNull(),
+  recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+  status: mysqlEnum("status", [
+    "queued",
+    "sent",
+    "delivered",
+    "opened",
+    "clicked",
+    "bounced",
+    "unsubscribed",
+    "failed",
+  ])
+    .default("queued")
+    .notNull(),
+  messageId: varchar("messageId", { length: 255 }),
+  openCount: int("openCount").default(0).notNull(),
+  clickCount: int("clickCount").default(0).notNull(),
+  lastEventTime: timestamp("lastEventTime"),
+  failureReason: text("failureReason"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailDeliveryStatus = typeof emailDeliveryStatus.$inferSelect;
+export type InsertEmailDeliveryStatus = typeof emailDeliveryStatus.$inferInsert;
+
+// ─── Webhook Event Log ────────────────────────────────────────────────────────
+export const webhookEventLog = mysqlTable("webhookEventLog", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  tenantId: int("tenantId").notNull(),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  deliveryStatusId: varchar("deliveryStatusId", { length: 64 }),
+  webhookPayload: json("webhookPayload").notNull(),
+  processed: boolean("processed").default(false).notNull(),
+  processedAt: timestamp("processedAt"),
+  error: text("error"),
+  retryCount: int("retryCount").default(0).notNull(),
+  maxRetries: int("maxRetries").default(3).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WebhookEventLog = typeof webhookEventLog.$inferSelect;
+export type InsertWebhookEventLog = typeof webhookEventLog.$inferInsert;
