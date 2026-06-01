@@ -1,9 +1,20 @@
 import { getDb } from "../db";
 import { actionHistory, emailCampaigns } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  updateDeliveryStatus,
+  logWebhookEvent,
+  markWebhookEventProcessed,
+} from "./emailDeliveryTracking";
 
 export type MailerLiteWebhookEvent = {
-  type: "subscriber.opened_email" | "subscriber.clicked_link" | "subscriber.bounced_email" | "subscriber.unsubscribed";
+  type:
+    | "subscriber.opened_email"
+    | "subscriber.clicked_link"
+    | "subscriber.bounced_email"
+    | "subscriber.unsubscribed"
+    | "email.sent"
+    | "email.delivered";
   data: {
     subscriber: {
       email: string;
@@ -15,12 +26,13 @@ export type MailerLiteWebhookEvent = {
     };
     timestamp?: string;
     link?: string;
+    messageId?: string;
   };
 };
 
 /**
  * Handle MailerLite webhook events
- * Updates action history with engagement metrics
+ * Updates action history with engagement metrics and delivery status
  */
 export async function handleMailerLiteWebhook(event: MailerLiteWebhookEvent): Promise<boolean> {
   try {
@@ -32,59 +44,117 @@ export async function handleMailerLiteWebhook(event: MailerLiteWebhookEvent): Pr
 
     const { type, data } = event;
     const { subscriber, campaign } = data;
+    const tenantId = 1; // Default tenant - can be enhanced with multi-tenant support
 
-    // Find the action history entry for this email
+    // Update delivery status tracking
+    let deliveryStatus: "queued" | "sent" | "delivered" | "opened" | "clicked" | "bounced" | "unsubscribed" | "failed" =
+      "queued";
+
+    switch (type) {
+      case "email.sent":
+        deliveryStatus = "sent";
+        break;
+      case "email.delivered":
+        deliveryStatus = "delivered";
+        break;
+      case "subscriber.opened_email":
+        deliveryStatus = "opened";
+        break;
+      case "subscriber.clicked_link":
+        deliveryStatus = "clicked";
+        break;
+      case "subscriber.bounced_email":
+        deliveryStatus = "bounced";
+        break;
+      case "subscriber.unsubscribed":
+        deliveryStatus = "unsubscribed";
+        break;
+    }
+
+    // Update email delivery status
+    if (campaign?.id) {
+      await updateDeliveryStatus(tenantId, {
+        campaignId: campaign.id,
+        recipientEmail: subscriber.email,
+        status: deliveryStatus,
+        messageId: data.messageId,
+        metadata: {
+          mailerliteSubscriberId: subscriber.id,
+          timestamp: data.timestamp || new Date().toISOString(),
+          link: data.link,
+        },
+      });
+    }
+
+    // Log webhook event for audit trail
+    await logWebhookEvent(
+      tenantId,
+      {
+        eventType: type === "email.sent" ? "delivered" : type === "subscriber.opened_email" ? "opened" : type === "subscriber.clicked_link" ? "clicked" : type === "subscriber.bounced_email" ? "bounced" : "unsubscribed",
+        payload: data,
+      },
+      campaign?.id
+    );
+
+    // Find the action history entry for this email (for legacy support)
     const actionHistoryEntry = await db
       .select()
       .from(actionHistory)
       .where(
         and(
-          eq(actionHistory.status, "completed"),
+          eq(actionHistory.status, "completed")
           // Match by recipient email in metadata
         )
       )
       .limit(1);
 
-    if (!actionHistoryEntry || actionHistoryEntry.length === 0) {
-      console.warn(`No action history found for email: ${subscriber.email}`);
-      return false;
+    if (actionHistoryEntry && actionHistoryEntry.length > 0) {
+      const entry = actionHistoryEntry[0];
+      const metadata = (entry.metadata as any) || {};
+
+      // Update metadata based on event type
+      switch (type) {
+        case "subscriber.opened_email":
+          metadata.opened = true;
+          metadata.openedAt = data.timestamp || new Date().toISOString();
+          break;
+
+        case "subscriber.clicked_link":
+          metadata.clicked = true;
+          metadata.clickedAt = data.timestamp || new Date().toISOString();
+          metadata.clickedLink = data.link;
+          break;
+
+        case "subscriber.bounced_email":
+          metadata.bounced = true;
+          metadata.bouncedAt = data.timestamp || new Date().toISOString();
+          metadata.bounceType = "hard";
+          break;
+
+        case "subscriber.unsubscribed":
+          metadata.unsubscribed = true;
+          metadata.unsubscribedAt = data.timestamp || new Date().toISOString();
+          break;
+
+        case "email.delivered":
+          metadata.delivered = true;
+          metadata.deliveredAt = data.timestamp || new Date().toISOString();
+          break;
+
+        case "email.sent":
+          metadata.sent = true;
+          metadata.sentAt = data.timestamp || new Date().toISOString();
+          break;
+      }
+
+      // Update the action history entry
+      await db
+        .update(actionHistory)
+        .set({
+          metadata: JSON.stringify(metadata),
+        })
+        .where(eq(actionHistory.id, entry.id));
     }
-
-    const entry = actionHistoryEntry[0];
-    const metadata = (entry.metadata as any) || {};
-
-    // Update metadata based on event type
-    switch (type) {
-      case "subscriber.opened_email":
-        metadata.opened = true;
-        metadata.openedAt = data.timestamp || new Date().toISOString();
-        break;
-
-      case "subscriber.clicked_link":
-        metadata.clicked = true;
-        metadata.clickedAt = data.timestamp || new Date().toISOString();
-        metadata.clickedLink = data.link;
-        break;
-
-      case "subscriber.bounced_email":
-        metadata.bounced = true;
-        metadata.bouncedAt = data.timestamp || new Date().toISOString();
-        metadata.bounceType = "hard"; // Can be enhanced with bounce type from MailerLite
-        break;
-
-      case "subscriber.unsubscribed":
-        metadata.unsubscribed = true;
-        metadata.unsubscribedAt = data.timestamp || new Date().toISOString();
-        break;
-    }
-
-    // Update the action history entry
-    await db
-      .update(actionHistory)
-      .set({
-        metadata: JSON.stringify(metadata),
-      })
-      .where(eq(actionHistory.id, entry.id));
 
     // Update campaign metrics if campaign ID is provided
     if (campaign?.id) {
@@ -110,6 +180,12 @@ export async function handleMailerLiteWebhook(event: MailerLiteWebhookEvent): Pr
             break;
           case "subscriber.unsubscribed":
             // Track unsubscribes in metadata instead
+            break;
+          case "email.sent":
+            updates.sentCount = (camp.sentCount || 0) + 1;
+            break;
+          case "email.delivered":
+            // Track in delivery status table
             break;
         }
 
