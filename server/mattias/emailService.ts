@@ -1,5 +1,5 @@
 import { invokeLLM } from "../_core/llm";
-import { sendEmailViaMailerLite } from "./mailerliteService";
+import { sendTransactionalEmail } from "./mailerliteTransactional";
 
 /**
  * Email service integration with MailerLite
@@ -175,27 +175,14 @@ export async function sendEmail(
       textContent = textContent.replace(`{{${variable}}}`, value);
     }
 
-    // Send via MailerLite
-    const result = await sendEmailViaMailerLite({
-      to: [
-        {
-          email: to.email,
-          name: to.name,
-          fields: {
-            company: to.companyName || "",
-          },
-          tags: ["campaign", template.category],
-        },
-      ],
-      from: {
-        name: senderName,
-        email: senderEmail,
-      },
+    // Send via MailerLite transactional API
+    const result = await sendTransactionalEmail({
+      to: to.email,
       subject,
       html: htmlContent,
       text: textContent,
+      from: senderEmail,
       replyTo: senderEmail,
-      tags: [template.category, "mattias"],
     });
 
     if (result.success) {

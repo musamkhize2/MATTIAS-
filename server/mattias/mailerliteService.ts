@@ -82,10 +82,10 @@ export async function sendEmailViaMailerLite(
         html: payload.html,
         plain_text: payload.text || stripHtml(payload.html),
       },
-      recipients: {
-        list_id: null, // Will be set based on subscriber list
-        segment_id: null,
-      },
+      emails: payload.to.map((c) => ({
+        email: c.email,
+        from: payload.from.email,
+      })),
     };
 
     // First, add subscribers to a temporary list
