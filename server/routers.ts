@@ -31,6 +31,7 @@ import { workflowsRouter } from "./mattias/workflowRouters";
 import { actionRouter } from "./mattias/actionRouter";
 import { analyticsRouter } from "./mattias/analyticsRouter";
 import { webhookRouter } from "./mattias/webhookRouter";
+import { webhookSettingsRouter } from "./routers/webhookSettingsRouter";
 import {
   orchestrateEvent,
   runMATTIASCommand,
@@ -79,6 +80,9 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ─── Webhook Settings ──────────────────────────────────────────────────────
+  webhookSettings: webhookSettingsRouter,
 
   // ─── Events ────────────────────────────────────────────────────────────────
   events: router({

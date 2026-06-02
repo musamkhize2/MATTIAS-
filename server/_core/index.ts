@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { handleWeeklyAnalyticsReport, handleMonthlyAnalyticsReport } from "../mattias/analyticsReportHandlers";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,10 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  // Scheduled callbacks (must come before Vite/static fallthrough)
+  app.post("/api/scheduled/analytics/weekly", handleWeeklyAnalyticsReport);
+  app.post("/api/scheduled/analytics/monthly", handleMonthlyAnalyticsReport);
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -50,6 +55,8 @@ async function startServer() {
   } else {
     serveStatic(app);
   }
+
+  // Fallthrough for unmatched routes (Vite/static) happens after all explicit routes
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

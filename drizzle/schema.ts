@@ -40,6 +40,7 @@ export const tenants = mysqlTable("tenants", {
     .default("assisted")
     .notNull(),
   features: json("features"),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
