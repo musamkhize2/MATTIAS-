@@ -86,7 +86,6 @@ export const webhookSettingsRouter = router({
         .update(tenants)
         .set({
           features: updatedFeatures,
-          updatedAt: new Date(),
         })
         .where(eq(tenants.id, ctx.user.tenantId));
 

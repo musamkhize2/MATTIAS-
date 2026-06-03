@@ -5,6 +5,8 @@ import { Mic, Square, Volume2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import LogoHeader from "@/components/LogoHeader";
+import VoiceCommandTemplates from "@/components/VoiceCommandTemplates";
+import WebhookEventStream from "@/components/WebhookEventStream";
 
 export default function VoiceInterface() {
   const [isListening, setIsListening] = useState(false);
@@ -213,6 +215,23 @@ export default function VoiceInterface() {
           </div>
         </Card>
       )}
+
+      {/* Voice Command Templates */}
+      <Card className="p-6 border-border bg-card">
+        <VoiceCommandTemplates 
+          onCommandSelect={(command) => {
+            const textarea = document.querySelector('textarea');
+            if (textarea) {
+              textarea.value = command;
+              setTranscript(command);
+            }
+          }}
+          isListening={isListening}
+        />
+      </Card>
+
+      {/* Real-Time Webhook Events */}
+      <WebhookEventStream />
 
       {/* Voice History */}
       {voiceHistory.length > 0 && (

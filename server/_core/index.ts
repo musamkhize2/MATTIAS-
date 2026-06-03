@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleWeeklyAnalyticsReport, handleMonthlyAnalyticsReport } from "../mattias/analyticsReportHandlers";
+import { setupWebhookStream } from "../webhookStream";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  // Setup WebSocket for webhook event streaming
+  setupWebhookStream(server);
+
   // Scheduled callbacks (must come before Vite/static fallthrough)
   app.post("/api/scheduled/analytics/weekly", handleWeeklyAnalyticsReport);
   app.post("/api/scheduled/analytics/monthly", handleMonthlyAnalyticsReport);

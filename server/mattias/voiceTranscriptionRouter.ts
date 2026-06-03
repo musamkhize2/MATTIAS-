@@ -26,6 +26,10 @@ export const voiceTranscriptionRouter = router({
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
       const db = await getDb();
 
+      if (!db) {
+        throw new Error("Database connection failed");
+      }
+
       try {
         // Transcribe audio
         const result = await transcribeAudio({
@@ -34,22 +38,25 @@ export const voiceTranscriptionRouter = router({
           prompt: input.prompt,
         });
 
+        // Check if result is an error
+        if ('error' in result) {
+          throw new Error(`Transcription failed: ${result.error}`);
+        }
+
         // Store transcription
         try {
           const voiceId = `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          if (db) {
-            await db.insert(voiceInteractions).values({
-              id: voiceId,
-              tenantId: tenant.id,
-              userId: ctx.user.id,
-              audioUrl: input.audioUrl,
-              transcribedText: result.text,
-              language: result.language || input.language || "en",
-              duration: 0,
-              confidence: "0.95",
-              status: "completed",
-            });
-          }
+          await db.insert(voiceInteractions).values({
+            id: voiceId,
+            tenantId: tenant.id,
+            userId: ctx.user.id,
+            audioUrl: input.audioUrl,
+            transcribedText: result.text,
+            language: result.language || input.language || "en",
+            duration: 0,
+            confidence: "0.95",
+            status: "completed",
+          });
         } catch (storageError) {
           console.warn("[Voice] Failed to store transcription:", storageError);
         }
@@ -81,6 +88,14 @@ export const voiceTranscriptionRouter = router({
     .query(async ({ ctx, input }) => {
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
       const db = await getDb();
+
+      if (!db) {
+        return {
+          success: false,
+          interactions: [],
+          total: 0,
+        };
+      }
 
       try {
         const history = await db
@@ -119,6 +134,10 @@ export const voiceTranscriptionRouter = router({
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
       const db = await getDb();
 
+      if (!db) {
+        throw new Error("Database connection failed");
+      }
+
       try {
         // Parse and execute command
         const commandLower = input.command.toLowerCase();
@@ -147,9 +166,8 @@ export const voiceTranscriptionRouter = router({
             transcribedText: input.command,
             language: "en",
             duration: 0,
-            confidence: 1.0,
+            confidence: "0.95",
             status: result.success ? "executed" : "failed",
-            createdAt: new Date().toISOString(),
           });
         } catch (storageError) {
           console.warn("[Voice] Failed to store command:", storageError);
@@ -174,18 +192,20 @@ export const voiceTranscriptionRouter = router({
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
       const db = await getDb();
 
+      if (!db) {
+        throw new Error("Database connection failed");
+      }
+
       try {
-        if (db) {
-          await db
-            .delete(voiceInteractions)
-            .where(
-              and(
-                eq(voiceInteractions.id, input.interactionId),
-                eq(voiceInteractions.tenantId, tenant.id),
-                eq(voiceInteractions.userId, ctx.user.id)
-              )
-            );
-        }
+        await db
+          .delete(voiceInteractions)
+          .where(
+            and(
+              eq(voiceInteractions.id, input.interactionId),
+              eq(voiceInteractions.tenantId, tenant.id),
+              eq(voiceInteractions.userId, ctx.user.id)
+            )
+          );
 
         return { success: true };
       } catch (error) {
