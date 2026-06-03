@@ -408,3 +408,38 @@ export const conversations = mysqlTable("conversations", {
 
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;
+
+
+// ─── Voice Interactions ────────────────────────────────────────────────────────
+export const voiceInteractions = mysqlTable("voice_interactions", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	audioUrl: text().notNull(),
+	transcribedText: text().notNull(),
+	language: varchar({ length: 10 }).default("en"),
+	duration: int().default(0),
+	confidence: varchar({ length: 10 }).default("0.95"),
+	status: mysqlEnum(["pending", "completed", "failed", "executed"]).default("pending"),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export type VoiceInteraction = typeof voiceInteractions.$inferSelect;
+export type InsertVoiceInteraction = typeof voiceInteractions.$inferInsert;
+
+
+// ─── Integration Health Monitoring ─────────────────────────────────────────────
+export const integrationStatus = mysqlTable("integration_status", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	integrationName: varchar({ length: 255 }).notNull(),
+	status: mysqlEnum(["healthy", "warning", "error"]).default("healthy"),
+	lastChecked: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	errorMessage: text(),
+	successRate: int().default(100),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export type IntegrationStatus = typeof integrationStatus.$inferSelect;
+export type InsertIntegrationStatus = typeof integrationStatus.$inferInsert;
