@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import { Brain, Clock, Search } from "lucide-react";
 import { useState } from "react";

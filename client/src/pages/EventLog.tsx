@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import { Activity, CircleDot, Clock, Filter, RefreshCw } from "lucide-react";
 import { useState } from "react";

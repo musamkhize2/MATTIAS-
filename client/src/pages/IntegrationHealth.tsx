@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
+import LogoHeader from "@/components/LogoHeader";
 
 interface IntegrationStatus {
   id: string;
@@ -138,9 +139,12 @@ export default function IntegrationHealth() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Integration Health</h1>
-        <p className="text-muted-foreground mt-1">Monitor the status and performance of all integrations</p>
+      <div className="flex items-center justify-between">
+        <LogoHeader size="md" showText={true} />
+        <div>
+          <h1 className="text-3xl font-bold">Integration Health</h1>
+          <p className="text-muted-foreground mt-1">Monitor the status and performance of all integrations</p>
+        </div>
       </div>
 
       {/* Summary Cards */}

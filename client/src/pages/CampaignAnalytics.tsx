@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

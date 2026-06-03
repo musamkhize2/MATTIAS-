@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { WebsiteAnalyzerDialog } from "@/components/WebsiteAnalyzerDialog";

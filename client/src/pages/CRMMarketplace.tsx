@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import { Zap, Plus, Trash2, ToggleLeft, ToggleRight, ExternalLink } from "lucide-react";
 import { useState } from "react";

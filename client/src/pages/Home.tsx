@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 

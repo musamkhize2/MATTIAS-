@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 "use client";
 
 import { useState } from "react";

@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import { Brain, CheckCircle, Settings, Shield, Zap } from "lucide-react";
 import { toast } from "sonner";

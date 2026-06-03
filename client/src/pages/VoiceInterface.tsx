@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Mic, Square, Volume2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import LogoHeader from "@/components/LogoHeader";
 
 export default function VoiceInterface() {
   const [isListening, setIsListening] = useState(false);
@@ -134,9 +135,12 @@ export default function VoiceInterface() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Voice Interface</h1>
-        <p className="text-muted-foreground">Hands-free AI operator — speak commands and approve actions by voice</p>
+      <div className="flex items-center justify-between mb-6">
+        <LogoHeader size="md" showText={true} />
+        <div className="space-y-2 text-right">
+          <h1 className="text-3xl font-bold text-foreground">Voice Interface</h1>
+          <p className="text-muted-foreground">Hands-free AI operator — speak commands and approve actions by voice</p>
+        </div>
       </div>
 
       {/* Voice Input Section */}

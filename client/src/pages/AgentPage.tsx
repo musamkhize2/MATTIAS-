@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import {
   Activity,

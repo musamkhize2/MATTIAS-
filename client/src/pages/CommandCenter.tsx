@@ -1,3 +1,4 @@
+import LogoHeader from "@/components/LogoHeader";
 import { trpc } from "@/lib/trpc";
 import { Brain, Send, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
