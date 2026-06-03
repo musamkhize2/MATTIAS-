@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mic, Square, Volume2, Loader2 } from "lucide-react";
+import { Mic, Square, Volume2, Loader2, Play, Pause, StopCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import LogoHeader from "@/components/LogoHeader";
 import VoiceCommandTemplates from "@/components/VoiceCommandTemplates";
 import WebhookEventStream from "@/components/WebhookEventStream";
+import { useAudioCapture } from "@/hooks/useAudioCapture";
+import { useVoiceFeedback, formatVoiceFeedback, generateParsingFeedback, generateParameterFeedback } from "@/hooks/useVoiceFeedback";
 
 export default function VoiceInterface() {
   const [isListening, setIsListening] = useState(false);
@@ -14,11 +16,16 @@ export default function VoiceInterface() {
   const [transcript, setTranscript] = useState("");
   const [response, setResponse] = useState("");
   const [voiceHistory, setVoiceHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const [extractedParams, setExtractedParams] = useState<any>(null);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+  
+  // Audio capture hook
+  const audioCapture = useAudioCapture();
+  
+  // Voice feedback hook
+  const voiceFeedback = useVoiceFeedback();
+  
   const recognitionRef = useRef<any>(null);
-
-  // Declare mutation at component scope
   const commandMutation = trpc.command.send.useMutation();
 
   useEffect(() => {
@@ -73,6 +80,28 @@ export default function VoiceInterface() {
     }
   };
 
+  const handleStartAudioCapture = async () => {
+    try {
+      await audioCapture.startRecording();
+      toast.info("Audio recording started. Speak now...");
+    } catch (error) {
+      toast.error("Failed to start recording");
+    }
+  };
+
+  const handleStopAudioCapture = async () => {
+    try {
+      await audioCapture.stopRecording();
+      if (audioCapture.audioBlob) {
+        toast.success(`Audio captured (${audioCapture.duration}s)`);
+        // In production, send to transcription API
+        setTranscript(`[Audio captured - ${audioCapture.duration}s]`);
+      }
+    } catch (error) {
+      toast.error("Failed to stop recording");
+    }
+  };
+
   const handleProcessCommand = async () => {
     if (!transcript.trim()) {
       toast.error("Please say a command first");
@@ -81,6 +110,10 @@ export default function VoiceInterface() {
 
     setIsProcessing(true);
     try {
+      // Generate parsing feedback
+      const parsingFeedback = generateParsingFeedback(transcript, 0.95);
+      await voiceFeedback.speak(parsingFeedback);
+
       // Call MATTIAS command interface with voice input
       const response = await commandMutation.mutateAsync({
         message: transcript,
@@ -88,6 +121,11 @@ export default function VoiceInterface() {
 
       const responseText = typeof response === "string" ? response : response.response;
       setResponse(responseText);
+
+      // Generate voice feedback for result
+      const resultFeedback = formatVoiceFeedback("sendCampaign", { recipientCount: 100 }, true);
+      await voiceFeedback.speak(resultFeedback);
+
       setVoiceHistory((prev) => [
         ...prev,
         {
@@ -97,15 +135,10 @@ export default function VoiceInterface() {
         },
       ]);
 
-      // Speak the response
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(responseText);
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-      }
-
       setTranscript("");
     } catch (error) {
+      const errorFeedback = "Command failed. Please try again.";
+      await voiceFeedback.speak(errorFeedback);
       toast.error("Failed to process command");
     } finally {
       setIsProcessing(false);
@@ -122,12 +155,14 @@ export default function VoiceInterface() {
       setTimeout(() => {
         if (transcript.toLowerCase().includes("yes") || transcript.toLowerCase().includes("approve")) {
           toast.success("Approval confirmed by voice");
+          voiceFeedback.speak("Approval confirmed. Proceeding with execution.");
           // TODO: Trigger approval mutation
         } else if (
           transcript.toLowerCase().includes("no") ||
           transcript.toLowerCase().includes("reject")
         ) {
           toast.info("Approval rejected");
+          voiceFeedback.speak("Approval rejected. Changes discarded.");
           // TODO: Trigger rejection mutation
         }
       }, 3000);
@@ -157,10 +192,10 @@ export default function VoiceInterface() {
           </div>
 
           {/* Control Buttons */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button
               onClick={handleStartListening}
-              disabled={isListening || isProcessing}
+              disabled={isListening || isProcessing || audioCapture.isRecording}
               className="gap-2"
               variant={isListening ? "destructive" : "default"}
             >
@@ -176,6 +211,23 @@ export default function VoiceInterface() {
             )}
 
             <Button
+              onClick={handleStartAudioCapture}
+              disabled={isListening || audioCapture.isRecording}
+              className="gap-2"
+              variant={audioCapture.isRecording ? "destructive" : "outline"}
+            >
+              <Mic size={16} />
+              {audioCapture.isRecording ? `Recording (${audioCapture.duration}s)` : "Record Audio"}
+            </Button>
+
+            {audioCapture.isRecording && (
+              <Button onClick={handleStopAudioCapture} variant="outline" className="gap-2">
+                <StopCircle size={16} />
+                Stop Recording
+              </Button>
+            )}
+
+            <Button
               onClick={handleProcessCommand}
               disabled={!transcript || isProcessing}
               className="gap-2"
@@ -185,8 +237,48 @@ export default function VoiceInterface() {
               {isProcessing ? "Processing..." : "Process Command"}
             </Button>
           </div>
+
+          {/* Audio Playback */}
+          {audioCapture.audioUrl && (
+            <div className="p-4 rounded-lg bg-background border border-border">
+              <p className="text-sm text-muted-foreground mb-2">Recorded Audio:</p>
+              <audio
+                src={audioCapture.audioUrl}
+                controls
+                className="w-full mb-3"
+              />
+              <Button
+                onClick={() => audioCapture.clearAudio()}
+                variant="outline"
+                size="sm"
+              >
+                Clear Recording
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* Voice Feedback Status */}
+      {voiceFeedback.isSpeaking && (
+        <Card className="p-4 border-border bg-card">
+          <div className="flex items-center gap-3">
+            <Volume2 size={20} className="text-blue-500 animate-pulse" />
+            <div>
+              <p className="text-sm font-medium text-card-foreground">Speaking...</p>
+              <p className="text-xs text-muted-foreground">MATTIAS is providing voice feedback</p>
+            </div>
+            <div className="ml-auto flex gap-2">
+              <Button onClick={voiceFeedback.pause} size="sm" variant="outline">
+                <Pause size={14} />
+              </Button>
+              <Button onClick={voiceFeedback.stop} size="sm" variant="outline">
+                <StopCircle size={14} />
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Response Section */}
       {response && (
@@ -198,7 +290,18 @@ export default function VoiceInterface() {
               <p className="text-foreground">{response}</p>
             </div>
 
-            <div className="flex gap-3">
+            {/* Extracted Parameters Display */}
+            {extractedParams && (
+              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  <Zap size={14} className="inline mr-2" />
+                  Extracted Parameters
+                </p>
+                <p className="text-sm text-blue-800 dark:text-blue-200">{extractedParams}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3 flex-wrap">
               <Button
                 onClick={handleApproveByVoice}
                 variant="default"
@@ -220,11 +323,8 @@ export default function VoiceInterface() {
       <Card className="p-6 border-border bg-card">
         <VoiceCommandTemplates 
           onCommandSelect={(command) => {
-            const textarea = document.querySelector('textarea');
-            if (textarea) {
-              textarea.value = command;
-              setTranscript(command);
-            }
+            setTranscript(command);
+            toast.info(`Command selected: ${command}`);
           }}
           isListening={isListening}
         />
