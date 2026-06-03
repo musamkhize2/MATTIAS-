@@ -64,6 +64,13 @@
       "when": 1780408214442,
       "tag": "0008_quick_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1780465167519,
+      "tag": "0009_simple_azazel",
+      "breakpoints": true
     }
   ]
 }

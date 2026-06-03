@@ -55,10 +55,20 @@ export const companyRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const tenant = await getOrCreateDefaultTenant(ctx.user.id);
-      const companyId = await createCompany(tenant.id, ctx.user.id, input as any);
-      const company = await getCompany(companyId, tenant.id);
-      return company;
+      try {
+        console.log('[Company.create] Starting company creation for user:', ctx.user.id);
+        const tenant = await getOrCreateDefaultTenant(ctx.user.id);
+        console.log('[Company.create] Tenant:', tenant.id);
+        const companyId = await createCompany(tenant.id, ctx.user.id, input as any);
+        console.log('[Company.create] Company created:', companyId);
+        const company = await getCompany(companyId, tenant.id);
+        console.log('[Company.create] Company retrieved:', company);
+        return company;
+      } catch (error) {
+        console.error('[Company.create] Error:', error instanceof Error ? error.message : String(error));
+        console.error('[Company.create] Full error:', error);
+        throw error;
+      }
     }),
 
   // Update an existing company

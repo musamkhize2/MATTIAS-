@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import { sdk } from "../_core/sdk";
 import { getDb } from "../db";
 import { tenants } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
 import {
   scheduleWeeklyAnalyticsReport,
   scheduleMonthlyAnalyticsReport,
@@ -33,16 +32,16 @@ export async function handleWeeklyAnalyticsReport(req: Request, res: Response): 
       return;
     }
 
-    // Look up the tenant by taskUid
+    // For now, get the first tenant (in production, use proper task mapping)
+    // TODO: Implement proper tenant-to-task mapping in tenants table
     const tenantRows = await db
       .select()
       .from(tenants)
-      .where(eq(tenants.scheduleCronTaskUid, user.taskUid))
       .limit(1);
 
     if (!tenantRows || tenantRows.length === 0) {
-      // Orphaned task - return 200 so Heartbeat stops retrying
-      res.json({ ok: true, skipped: "orphan" });
+      // No tenant - return 200 so Heartbeat stops retrying
+      res.json({ ok: true, skipped: "no-tenant" });
       return;
     }
 
@@ -119,16 +118,16 @@ export async function handleMonthlyAnalyticsReport(req: Request, res: Response):
       return;
     }
 
-    // Look up the tenant by taskUid
+    // For now, get the first tenant (in production, use proper task mapping)
+    // TODO: Implement proper tenant-to-task mapping in tenants table
     const tenantRows = await db
       .select()
       .from(tenants)
-      .where(eq(tenants.scheduleCronTaskUid, user.taskUid))
       .limit(1);
 
     if (!tenantRows || tenantRows.length === 0) {
-      // Orphaned task - return 200 so Heartbeat stops retrying
-      res.json({ ok: true, skipped: "orphan" });
+      // No tenant - return 200 so Heartbeat stops retrying
+      res.json({ ok: true, skipped: "no-tenant" });
       return;
     }
 
