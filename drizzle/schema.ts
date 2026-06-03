@@ -378,3 +378,33 @@ export const companyMetrics = mysqlTable("company_metrics", {
 
 export type CompanyMetrics = typeof companyMetrics.$inferSelect;
 export type InsertCompanyMetrics = typeof companyMetrics.$inferInsert;
+
+
+// ─── AI Chat & Conversations ───────────────────────────────────────────────────
+export const conversationHistory = mysqlTable("conversation_history", {
+	id: varchar({ length: 64 }).primaryKey(),
+	conversationId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	role: mysqlEnum(["system", "user", "assistant"]).notNull(),
+	content: text().notNull(),
+	metadata: json(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+
+export type ConversationHistory = typeof conversationHistory.$inferSelect;
+export type InsertConversationHistory = typeof conversationHistory.$inferInsert;
+
+export const conversations = mysqlTable("conversations", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	systemPrompt: text(),
+	isArchived: boolean().default(false),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;

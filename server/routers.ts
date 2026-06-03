@@ -32,6 +32,7 @@ import { actionRouter } from "./mattias/actionRouter";
 import { analyticsRouter } from "./mattias/analyticsRouter";
 import { webhookRouter } from "./mattias/webhookRouter";
 import { webhookSettingsRouter } from "./routers/webhookSettingsRouter";
+import { aiChatRouter } from "./mattias/aiChatRouter";
 import {
   orchestrateEvent,
   runMATTIASCommand,
@@ -503,6 +504,8 @@ export const appRouter = router({
   actions: actionRouter,
   // ─── Analytics ────────────────────────────────────────────────────────────────
   analytics: analyticsRouter,
+  // ─── AI Chat ───────────────────────────────────────────────────────────────
+  ai: aiChatRouter,
 
 });
 export type AppRouter = typeof appRouter;
