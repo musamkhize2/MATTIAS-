@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { transcribeAudio } from "../_core/voiceTranscription";
 import { getDb, getOrCreateDefaultTenant } from "../db";
 import { voiceInteractions } from "../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Voice Transcription Router
@@ -23,7 +24,7 @@ export const voiceTranscriptionRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
-      const db = getDb();
+      const db = await getDb();
 
       try {
         // Transcribe audio
@@ -35,18 +36,20 @@ export const voiceTranscriptionRouter = router({
 
         // Store transcription
         try {
-          await db.insert(voiceInteractions).values({
-            id: `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            tenantId: tenant.id,
-            userId: ctx.user.id,
-            audioUrl: input.audioUrl,
-            transcribedText: result.text,
-            language: result.language || input.language || "en",
-            duration: 0,
-            confidence: 0.95,
-            status: "completed",
-            createdAt: new Date().toISOString(),
-          });
+          const voiceId = `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          if (db) {
+            await db.insert(voiceInteractions).values({
+              id: voiceId,
+              tenantId: tenant.id,
+              userId: ctx.user.id,
+              audioUrl: input.audioUrl,
+              transcribedText: result.text,
+              language: result.language || input.language || "en",
+              duration: 0,
+              confidence: "0.95",
+              status: "completed",
+            });
+          }
         } catch (storageError) {
           console.warn("[Voice] Failed to store transcription:", storageError);
         }
@@ -77,13 +80,13 @@ export const voiceTranscriptionRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
-      const db = getDb();
+      const db = await getDb();
 
       try {
         const history = await db
           .select()
           .from(voiceInteractions)
-          .where((t: any) => t.tenantId === tenant.id && t.userId === ctx.user.id)
+          .where(and(eq(voiceInteractions.tenantId, tenant.id), eq(voiceInteractions.userId, ctx.user.id)))
           .limit(input.limit)
           .offset(input.offset);
 
@@ -114,7 +117,7 @@ export const voiceTranscriptionRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
-      const db = getDb();
+      const db = await getDb();
 
       try {
         // Parse and execute command
@@ -169,17 +172,20 @@ export const voiceTranscriptionRouter = router({
     .input(z.object({ interactionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const tenant = await getOrCreateDefaultTenant(ctx.user.id);
-      const db = getDb();
+      const db = await getDb();
 
       try {
-        await db
-          .delete(voiceInteractions)
-          .where(
-            (t: any) =>
-              t.id === input.interactionId &&
-              t.tenantId === tenant.id &&
-              t.userId === ctx.user.id
-          );
+        if (db) {
+          await db
+            .delete(voiceInteractions)
+            .where(
+              and(
+                eq(voiceInteractions.id, input.interactionId),
+                eq(voiceInteractions.tenantId, tenant.id),
+                eq(voiceInteractions.userId, ctx.user.id)
+              )
+            );
+        }
 
         return { success: true };
       } catch (error) {
