@@ -443,3 +443,70 @@ export const integrationStatus = mysqlTable("integration_status", {
 
 export type IntegrationStatus = typeof integrationStatus.$inferSelect;
 export type InsertIntegrationStatus = typeof integrationStatus.$inferInsert;
+
+// ─── Voice Profiles ────────────────────────────────────────────────────────
+export const voiceProfiles = mysqlTable("voice_profiles", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	triggerPhrase: varchar({ length: 255 }).notNull(),
+	enabled: boolean().default(true),
+	executionCount: int().default(0),
+	lastExecutedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+export type VoiceProfile = typeof voiceProfiles.$inferSelect;
+export type InsertVoiceProfile = typeof voiceProfiles.$inferInsert;
+
+// ─── Voice Profile Commands ────────────────────────────────────────────────
+export const voiceProfileCommands = mysqlTable("voice_profile_commands", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	action: varchar({ length: 255 }).notNull(),
+	parameters: json().notNull(),
+	delay: int().default(0),
+	description: text(),
+	sequenceOrder: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+export type VoiceProfileCommand = typeof voiceProfileCommands.$inferSelect;
+export type InsertVoiceProfileCommand = typeof voiceProfileCommands.$inferInsert;
+
+// ─── Voice Profile Executions ────────────────────────────────────────────────
+export const voiceProfileExecutions = mysqlTable("voice_profile_executions", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	status: mysqlEnum(["pending", "executing", "completed", "failed"]).default("pending"),
+	startedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	error: text(),
+	results: json(),
+	duration: int().default(0),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+export type VoiceProfileExecution = typeof voiceProfileExecutions.$inferSelect;
+export type InsertVoiceProfileExecution = typeof voiceProfileExecutions.$inferInsert;
+
+// ─── Voice Profile Analytics ────────────────────────────────────────────────
+export const voiceProfileAnalytics = mysqlTable("voice_profile_analytics", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	totalExecutions: int().default(0),
+	successfulExecutions: int().default(0),
+	failedExecutions: int().default(0),
+	averageExecutionTime: int().default(0),
+	lastExecutedAt: timestamp({ mode: 'string' }),
+	successRate: int().default(0),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+export type VoiceProfileAnalytics = typeof voiceProfileAnalytics.$inferSelect;
+export type InsertVoiceProfileAnalytics = typeof voiceProfileAnalytics.$inferInsert;
