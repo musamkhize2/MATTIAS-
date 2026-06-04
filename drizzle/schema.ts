@@ -510,3 +510,74 @@ export const voiceProfileAnalytics = mysqlTable("voice_profile_analytics", {
 });
 export type VoiceProfileAnalytics = typeof voiceProfileAnalytics.$inferSelect;
 export type InsertVoiceProfileAnalytics = typeof voiceProfileAnalytics.$inferInsert;
+
+// ─── Profile Sharing & Collaboration ────────────────────────────────────────
+export const profileShares = mysqlTable("profile_shares", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	ownerId: int().notNull(),
+	sharedWithUserId: int(),
+	sharedWithTeamId: int(),
+	role: mysqlEnum(["viewer", "executor", "editor", "admin"]).default("viewer"),
+	sharedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	expiresAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+export type ProfileShare = typeof profileShares.$inferSelect;
+export type InsertProfileShare = typeof profileShares.$inferInsert;
+
+// ─── Profile Versions ──────────────────────────────────────────────────────
+export const profileVersions = mysqlTable("profile_versions", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	versionNumber: int().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	triggerPhrase: varchar({ length: 255 }).notNull(),
+	commands: json().notNull(),
+	changeLog: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+export type ProfileVersion = typeof profileVersions.$inferSelect;
+export type InsertProfileVersion = typeof profileVersions.$inferInsert;
+
+// ─── Scheduled Profile Executions ──────────────────────────────────────────
+export const scheduledProfileExecutions = mysqlTable("scheduled_profile_executions", {
+	id: varchar({ length: 64 }).primaryKey(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	cronExpression: varchar({ length: 255 }).notNull(),
+	enabled: boolean().default(true),
+	nextExecutionAt: timestamp({ mode: 'string' }),
+	lastExecutionAt: timestamp({ mode: 'string' }),
+	lastExecutionStatus: mysqlEnum(["success", "failed", "pending"]),
+	executionCount: int().default(0),
+	failureCount: int().default(0),
+	timezone: varchar({ length: 64 }).default("UTC"),
+	notifyOnFailure: boolean().default(true),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+export type ScheduledProfileExecution = typeof scheduledProfileExecutions.$inferSelect;
+export type InsertScheduledProfileExecution = typeof scheduledProfileExecutions.$inferInsert;
+
+// ─── Scheduled Execution Logs ──────────────────────────────────────────────
+export const scheduledExecutionLogs = mysqlTable("scheduled_execution_logs", {
+	id: varchar({ length: 64 }).primaryKey(),
+	scheduleId: varchar({ length: 64 }).notNull(),
+	profileId: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	status: mysqlEnum(["success", "failed", "skipped"]).default("pending"),
+	startedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	completedAt: timestamp({ mode: 'string' }),
+	duration: int().default(0),
+	error: text(),
+	results: json(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+});
+export type ScheduledExecutionLog = typeof scheduledExecutionLogs.$inferSelect;
+export type InsertScheduledExecutionLog = typeof scheduledExecutionLogs.$inferInsert;
